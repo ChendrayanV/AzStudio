@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AzStudio.Core\AzStudio.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>AzStudio</AssemblyName>
+    <RootNamespace>AzStudio.App</RootNamespace>
+    <ApplicationIcon />
+    <Platforms>AnyCPU;x64</Platforms>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+</Project>

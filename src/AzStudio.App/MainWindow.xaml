@@ -1,0 +1,243 @@
+﻿<Window x:Class="AzStudio.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AzStudio.App"
+        xmlns:vm="clr-namespace:AzStudio.App.ViewModels"
+        mc:Ignorable="d"
+        Title="AzStudio" Height="700" Width="1150" MinHeight="500" MinWidth="850">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Connections panel -->
+            <DockPanel Grid.Column="0" Background="{StaticResource PanelBackgroundBrush}" Margin="0">
+                <TextBlock DockPanel.Dock="Top" Text="Connections" Style="{StaticResource SectionHeader}" Margin="12,12,12,6" />
+
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12,0,12,8">
+                    <Button Content="New" Click="NewConnection_Click" />
+                    <Button Content="Edit" Click="EditConnection_Click" />
+                    <Button Content="Delete" Style="{StaticResource SecondaryButton}" Click="DeleteConnection_Click" />
+                </StackPanel>
+
+                <ListBox DockPanel.Dock="Top" x:Name="ConnectionsList"
+                         ItemsSource="{Binding Connections}"
+                         SelectedItem="{Binding SelectedConnection, Mode=TwoWay}"
+                         DisplayMemberPath="Name"
+                         Margin="12,0,12,8" MinHeight="140" MaxHeight="260" />
+
+                <StackPanel DockPanel.Dock="Top" Margin="12,0,12,8">
+                    <Button Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,0,6" />
+                    <Button Content="Disconnect" Style="{StaticResource SecondaryButton}" Command="{Binding DisconnectCommand}" Margin="0" />
+                </StackPanel>
+
+                <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,0" Padding="12" Margin="0,20,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Status" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" FontSize="12" Foreground="#3B3F45" />
+                    </StackPanel>
+                </Border>
+
+                <Grid />
+            </DockPanel>
+
+            <!-- Service tabs -->
+            <TabControl Grid.Column="1" Margin="0" IsEnabled="{Binding IsConnected}">
+                <TabItem Header="Blob Storage" DataContext="{Binding BlobStorage}">
+                    <Grid Margin="16">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                            <TextBlock Text="Storage account:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Text="{Binding StorageAccountName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                            <Button Content="Load Containers" Command="{Binding LoadContainersCommand}" />
+                            <Button Content="New Container" Command="{Binding CreateContainerCommand}" />
+                            <Button Content="Delete Container" Style="{StaticResource SecondaryButton}" Command="{Binding DeleteContainerCommand}" />
+                        </StackPanel>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="240" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <DockPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock DockPanel.Dock="Top" Text="Containers" Style="{StaticResource SectionHeader}" />
+                                <ListBox ItemsSource="{Binding Containers}"
+                                         SelectedItem="{Binding SelectedContainer, Mode=TwoWay}"
+                                         DisplayMemberPath="Name" />
+                            </DockPanel>
+
+                            <DockPanel Grid.Column="1">
+                                <TextBlock DockPanel.Dock="Top" Text="Blobs" Style="{StaticResource SectionHeader}" />
+                                <ListView ItemsSource="{Binding Blobs}" SelectedItem="{Binding SelectedBlob, Mode=TwoWay}">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="360" />
+                                            <GridViewColumn Header="Size (bytes)" DisplayMemberBinding="{Binding SizeBytes}" Width="120" />
+                                            <GridViewColumn Header="Last Modified" DisplayMemberBinding="{Binding LastModified}" Width="180" />
+                                            <GridViewColumn Header="Content Type" DisplayMemberBinding="{Binding ContentType}" Width="160" />
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </DockPanel>
+                        </Grid>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,8">
+                            <Button Content="Upload File..." Command="{Binding UploadCommand}" />
+                            <Button Content="Download..." Command="{Binding DownloadCommand}" />
+                            <Button Content="Delete Blob" Style="{StaticResource SecondaryButton}" Command="{Binding DeleteBlobCommand}" />
+                            <Button Content="Refresh Blobs" Style="{StaticResource SecondaryButton}" Command="{Binding LoadBlobsCommand}" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Service Bus" DataContext="{Binding ServiceBus}">
+                    <TabControl Margin="0" Padding="0">
+                    <TabItem Header="Browse">
+                    <Grid Margin="16">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="2*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="2*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                            <TextBlock Text="Namespace:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Text="{Binding NamespaceName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                            <Button Content="Load Topics &amp; Queues" Command="{Binding LoadTopicsAndQueuesCommand}" />
+                            <Button Content="Send to Topic..." Command="{Binding SendTopicMessageCommand}" />
+                            <Button Content="Send to Queue..." Command="{Binding SendQueueMessageCommand}" />
+                        </StackPanel>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="180" />
+                                <ColumnDefinition Width="180" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <DockPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock DockPanel.Dock="Top" Text="Queues" Style="{StaticResource SectionHeader}" />
+                                <ListView ItemsSource="{Binding Queues}" SelectedItem="{Binding SelectedQueue, Mode=TwoWay}">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="140" />
+                                            <GridViewColumn Header="Active" DisplayMemberBinding="{Binding ActiveMessageCount}" Width="60" />
+                                            <GridViewColumn Header="DLQ" DisplayMemberBinding="{Binding DeadLetterMessageCount}" Width="50" />
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </DockPanel>
+
+                            <DockPanel Grid.Column="1" Margin="0,0,10,0">
+                                <TextBlock DockPanel.Dock="Top" Text="Topics" Style="{StaticResource SectionHeader}" />
+                                <ListBox ItemsSource="{Binding Topics}"
+                                         SelectedItem="{Binding SelectedTopic, Mode=TwoWay}"
+                                         DisplayMemberPath="Name" />
+                            </DockPanel>
+
+                            <DockPanel Grid.Column="2">
+                                <TextBlock DockPanel.Dock="Top" Text="Subscriptions (of selected topic)" Style="{StaticResource SectionHeader}" />
+                                <ListView ItemsSource="{Binding Subscriptions}" SelectedItem="{Binding SelectedSubscription, Mode=TwoWay}">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="220" />
+                                            <GridViewColumn Header="Active" DisplayMemberBinding="{Binding ActiveMessageCount}" Width="80" />
+                                            <GridViewColumn Header="Dead-letter" DisplayMemberBinding="{Binding DeadLetterMessageCount}" Width="90" />
+                                            <GridViewColumn Header="Total" DisplayMemberBinding="{Binding TotalMessageCount}" Width="80" />
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </DockPanel>
+                        </Grid>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,8">
+                            <Button Content="Refresh Queue Messages" Command="{Binding PeekQueueMessagesCommand}" />
+                            <Button Content="Refresh Subscription Messages" Command="{Binding PeekMessagesCommand}" />
+                        </StackPanel>
+
+                        <DockPanel Grid.Row="3">
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}">
+                                <Run Text="Peeked Messages (non-destructive) — double-click a row for full details" />
+                                <Run Text=" — " />
+                                <Run Text="{Binding PeekedMessagesSource}" FontWeight="Normal" />
+                            </TextBlock>
+                            <ListView x:Name="PeekedMessagesListView" ItemsSource="{Binding PeekedMessages}"
+                                      MouseDoubleClick="PeekedMessagesListView_MouseDoubleClick">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Seq #" DisplayMemberBinding="{Binding SequenceNumber}" Width="70" />
+                                        <GridViewColumn Header="Message ID" DisplayMemberBinding="{Binding MessageId}" Width="200" />
+                                        <GridViewColumn Header="Subject" DisplayMemberBinding="{Binding Subject}" Width="150" />
+                                        <GridViewColumn Header="Enqueued" DisplayMemberBinding="{Binding EnqueuedTime}" Width="160" />
+                                        <GridViewColumn Header="Body" DisplayMemberBinding="{Binding Body}" Width="260" />
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </DockPanel>
+
+                        <TextBlock Grid.Row="4" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" Margin="0,8,0,0" />
+                    </Grid>
+                    </TabItem>
+
+                    <TabItem Header="All Messages">
+                        <Grid Margin="16">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="Scan All Accessible Messages" Command="{Binding ScanAllMessagesCommand}" />
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="1" Text="{Binding AllMessagesStatus}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" Margin="0,0,0,10" />
+
+                            <ListView Grid.Row="2" x:Name="AllMessagesListView" ItemsSource="{Binding AllMessages}"
+                                      MouseDoubleClick="AllMessagesListView_MouseDoubleClick">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceDescription}" Width="260" />
+                                        <GridViewColumn Header="Seq #" DisplayMemberBinding="{Binding SequenceNumber}" Width="60" />
+                                        <GridViewColumn Header="Message ID" DisplayMemberBinding="{Binding MessageId}" Width="180" />
+                                        <GridViewColumn Header="Subject" DisplayMemberBinding="{Binding Subject}" Width="120" />
+                                        <GridViewColumn Header="Enqueued" DisplayMemberBinding="{Binding EnqueuedTime}" Width="150" />
+                                        <GridViewColumn Header="Body" DisplayMemberBinding="{Binding Body}" Width="220" />
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </TabItem>
+                    </TabControl>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,0" Padding="12,6">
+            <TextBlock>
+                <Run Text="Connected: " />
+                <Run Text="{Binding ConnectedConnectionName, FallbackValue='(none)', TargetNullValue='(none)'}" FontWeight="SemiBold" />
+            </TextBlock>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,14 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+
+## Publish output
+publish/
+
+## VS / Rider
+.vs/
+.idea/
+*.userosscache
+*.sln.docstates
