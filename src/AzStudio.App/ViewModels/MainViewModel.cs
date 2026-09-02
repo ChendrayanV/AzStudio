@@ -77,16 +77,18 @@ public partial class MainViewModel : ObservableObject
         var profile = SelectedConnection;
 
         IsConnecting = true;
-        StatusMessage = profile.AuthType == AuthType.InteractiveUser
-            ? "Signing in (check for a browser window)..."
-            : "Authenticating...";
+        StatusMessage = "Connected. Sign-in happens per service when you first load data.";
         try
         {
             var credential = CredentialFactory.Create(profile);
 
-            // Force the sign-in to actually happen now, so a failure/cancellation shows up
-            // as "Connect" failing rather than as a silently empty list later.
-            await CredentialFactory.VerifySignInAsync(credential);
+            // Deliberately NOT forcing a token fetch here. Storage and Service Bus are
+            // different Azure resource audiences, so each authenticates separately on its
+            // own first use regardless — pre-fetching a token for an unrelated resource
+            // (e.g. Azure Resource Manager, which this app never calls) just adds a second,
+            // wasted sign-in round and can trigger an extra interactive prompt in tenants
+            // with strict per-resource conditional access. Each tab's Load command already
+            // surfaces auth failures clearly via its own try/catch.
 
             // Both tabs are activated with the shared credential regardless of whether a
             // default account/namespace was saved on this connection — the account/namespace

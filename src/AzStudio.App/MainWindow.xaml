@@ -114,6 +114,7 @@
                     <Grid Margin="16">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="2*" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="2*" />
@@ -128,7 +129,27 @@
                             <Button Content="Send to Queue..." Command="{Binding SendQueueMessageCommand}" />
                         </StackPanel>
 
-                        <Grid Grid.Row="1">
+                        <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Background="{StaticResource PanelBackgroundBrush}" Padding="10" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Connect directly to a queue or topic (no list/browse permission needed)" Style="{StaticResource SectionHeader}" Margin="0,0,0,8" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Queue:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBox Text="{Binding DirectQueueName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                                    <Button Content="Peek" Command="{Binding PeekDirectQueueCommand}" />
+                                    <Button Content="Send..." Command="{Binding SendDirectQueueMessageCommand}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Topic:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBox Text="{Binding DirectTopicName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                                    <TextBlock Text="Subscription:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBox Text="{Binding DirectSubscriptionName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                                    <Button Content="Peek" Command="{Binding PeekDirectSubscriptionCommand}" />
+                                    <Button Content="Send..." Command="{Binding SendDirectTopicMessageCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="180" />
                                 <ColumnDefinition Width="180" />
@@ -170,12 +191,12 @@
                             </DockPanel>
                         </Grid>
 
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,8">
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,12,0,8">
                             <Button Content="Refresh Queue Messages" Command="{Binding PeekQueueMessagesCommand}" />
                             <Button Content="Refresh Subscription Messages" Command="{Binding PeekMessagesCommand}" />
                         </StackPanel>
 
-                        <DockPanel Grid.Row="3">
+                        <DockPanel Grid.Row="4">
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}">
                                 <Run Text="Peeked Messages (non-destructive) — double-click a row for full details" />
                                 <Run Text=" — " />
@@ -195,7 +216,7 @@
                             </ListView>
                         </DockPanel>
 
-                        <TextBlock Grid.Row="4" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" Margin="0,8,0,0" />
+                        <TextBlock Grid.Row="5" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" Margin="0,8,0,0" />
                     </Grid>
                     </TabItem>
 

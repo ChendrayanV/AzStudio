@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using Azure;
 using Azure.Core;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -25,6 +26,10 @@ public partial class ServiceBusTabViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(SendTopicMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(SendQueueMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ScanAllMessagesCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PeekDirectQueueCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SendDirectQueueMessageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PeekDirectSubscriptionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SendDirectTopicMessageCommand))]
     private bool isBusy;
 
     [ObservableProperty]
@@ -47,6 +52,20 @@ public partial class ServiceBusTabViewModel : ObservableObject
     /// <summary>Label for whichever entity the Peeked Messages list currently shows ("Queue 'x'" or "Topic 'x' / Subscription 'y'").</summary>
     [ObservableProperty]
     private string peekedMessagesSource = string.Empty;
+
+    // Direct-entry fields: connecting straight to a named queue, or a named topic +
+    // subscription, without going through ListQueuesAsync/ListTopicsAsync first. Azure
+    // Service Bus requires namespace-wide "manage" rights just to list entities — a user
+    // whose RBAC role is scoped to one specific queue/topic can legitimately have zero
+    // ability to list anything, even though they can send/peek on that one entity directly.
+    [ObservableProperty]
+    private string directQueueName = string.Empty;
+
+    [ObservableProperty]
+    private string directTopicName = string.Empty;
+
+    [ObservableProperty]
+    private string directSubscriptionName = string.Empty;
 
     public ObservableCollection<QueueInfo> Queues { get; } = new();
 
@@ -79,7 +98,10 @@ public partial class ServiceBusTabViewModel : ObservableObject
         PeekedMessagesSource = string.Empty;
         AllMessages.Clear();
         AllMessagesStatus = string.Empty;
-        StatusMessage = "Connected. Enter a Service Bus namespace and load queues/topics.";
+        DirectQueueName = string.Empty;
+        DirectTopicName = string.Empty;
+        DirectSubscriptionName = string.Empty;
+        StatusMessage = "Connected. Enter a Service Bus namespace and load queues/topics — or connect directly to a specific queue/topic below.";
         NotifyServiceCommands();
     }
 
@@ -95,6 +117,9 @@ public partial class ServiceBusTabViewModel : ObservableObject
         PeekedMessagesSource = string.Empty;
         AllMessages.Clear();
         AllMessagesStatus = string.Empty;
+        DirectQueueName = string.Empty;
+        DirectTopicName = string.Empty;
+        DirectSubscriptionName = string.Empty;
         StatusMessage = "Not connected.";
         NotifyServiceCommands();
     }
@@ -113,6 +138,10 @@ public partial class ServiceBusTabViewModel : ObservableObject
         SendTopicMessageCommand.NotifyCanExecuteChanged();
         SendQueueMessageCommand.NotifyCanExecuteChanged();
         ScanAllMessagesCommand.NotifyCanExecuteChanged();
+        PeekDirectQueueCommand.NotifyCanExecuteChanged();
+        SendDirectQueueMessageCommand.NotifyCanExecuteChanged();
+        PeekDirectSubscriptionCommand.NotifyCanExecuteChanged();
+        SendDirectTopicMessageCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanRunService() => _credential is not null && !IsBusy;
@@ -152,19 +181,48 @@ public partial class ServiceBusTabViewModel : ObservableObject
         try
         {
             StatusMessage = $"Loading queues and topics in '{_connectedNamespace}'...";
-            var queues = await service.ListQueuesAsync();
-            var topics = await service.ListTopicsAsync();
+
+            // Listing queues and listing topics are independent calls, each requiring
+            // namespace-wide "manage" rights (Azure Service Bus Data Owner or similar) —
+            // a user might have list access to one but not the other, or neither, even
+            // while having full send/peek access to a specific entity they already know
+            // the name of. So a 401/403 on one must not block the other, and the message
+            // below points at the "connect directly" fields as the fallback.
+            var deniedKinds = new List<string>();
 
             Queues.Clear();
-            foreach (var q in queues) Queues.Add(q);
+            try
+            {
+                var queues = await service.ListQueuesAsync();
+                foreach (var q in queues) Queues.Add(q);
+            }
+            catch (Exception ex) when (IsAccessDenied(ex))
+            {
+                deniedKinds.Add("queues");
+            }
 
             Topics.Clear();
-            foreach (var t in topics) Topics.Add(t);
+            try
+            {
+                var topics = await service.ListTopicsAsync();
+                foreach (var t in topics) Topics.Add(t);
+            }
+            catch (Exception ex) when (IsAccessDenied(ex))
+            {
+                deniedKinds.Add("topics");
+            }
 
             Subscriptions.Clear();
             PeekedMessages.Clear();
             PeekedMessagesSource = string.Empty;
-            StatusMessage = $"{Queues.Count} queue(s) and {Topics.Count} topic(s) loaded from '{_connectedNamespace}'.";
+
+            StatusMessage = deniedKinds.Count == 0
+                ? $"{Queues.Count} queue(s) and {Topics.Count} topic(s) loaded from '{_connectedNamespace}'."
+                : $"Loaded {Queues.Count} queue(s) and {Topics.Count} topic(s) from '{_connectedNamespace}'. " +
+                  $"You don't have permission to list {string.Join(" or ", deniedKinds)} in this namespace " +
+                  "(that needs namespace-wide access, separate from access to one specific entity). " +
+                  "If you know the exact queue or topic/subscription name you have access to, use " +
+                  "'Connect directly to a queue or topic' below instead.";
         }
         catch (Exception ex)
         {
@@ -175,6 +233,13 @@ public partial class ServiceBusTabViewModel : ObservableObject
             IsBusy = false;
         }
     }
+
+    private static bool IsAccessDenied(Exception ex) => ex switch
+    {
+        RequestFailedException rfe => rfe.Status is 401 or 403,
+        UnauthorizedAccessException => true,
+        _ => false
+    };
 
     partial void OnSelectedTopicChanged(TopicInfo? value)
     {
@@ -353,6 +418,137 @@ public partial class ServiceBusTabViewModel : ObservableObject
         catch (Exception ex)
         {
             AllMessagesStatus = $"Scan failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunService))]
+    private async Task PeekDirectQueueAsync()
+    {
+        var service = EnsureService();
+        if (service is null) return;
+
+        var name = DirectQueueName.Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            StatusMessage = "Enter a queue name first.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            StatusMessage = $"Peeking messages in queue '{name}'...";
+            var messages = await service.PeekQueueMessagesAsync(name);
+            PeekedMessages.Clear();
+            foreach (var m in messages) PeekedMessages.Add(m);
+            PeekedMessagesSource = $"Queue '{name}'";
+            StatusMessage = $"{PeekedMessages.Count} message(s) peeked from '{name}' (non-destructive). Double-click a row for full details.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Peek failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunService))]
+    private async Task SendDirectQueueMessageAsync()
+    {
+        var service = EnsureService();
+        if (service is null) return;
+
+        var name = DirectQueueName.Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            StatusMessage = "Enter a queue name first.";
+            return;
+        }
+
+        var result = SendMessageWindow.Prompt(Application.Current.MainWindow);
+        if (result is null) return;
+
+        IsBusy = true;
+        try
+        {
+            await service.SendMessageAsync(name, result.Value.Body, result.Value.Subject);
+            StatusMessage = $"Message sent to queue '{name}'.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Send failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunService))]
+    private async Task PeekDirectSubscriptionAsync()
+    {
+        var service = EnsureService();
+        if (service is null) return;
+
+        var topic = DirectTopicName.Trim();
+        var subscription = DirectSubscriptionName.Trim();
+        if (string.IsNullOrEmpty(topic) || string.IsNullOrEmpty(subscription))
+        {
+            StatusMessage = "Enter both a topic name and a subscription name first.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            StatusMessage = $"Peeking messages in '{topic}' / '{subscription}'...";
+            var messages = await service.PeekMessagesAsync(topic, subscription);
+            PeekedMessages.Clear();
+            foreach (var m in messages) PeekedMessages.Add(m);
+            PeekedMessagesSource = $"Topic '{topic}' / Subscription '{subscription}'";
+            StatusMessage = $"{PeekedMessages.Count} message(s) peeked (non-destructive). Double-click a row for full details.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Peek failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunService))]
+    private async Task SendDirectTopicMessageAsync()
+    {
+        var service = EnsureService();
+        if (service is null) return;
+
+        var topic = DirectTopicName.Trim();
+        if (string.IsNullOrEmpty(topic))
+        {
+            StatusMessage = "Enter a topic name first.";
+            return;
+        }
+
+        var result = SendMessageWindow.Prompt(Application.Current.MainWindow);
+        if (result is null) return;
+
+        IsBusy = true;
+        try
+        {
+            await service.SendMessageAsync(topic, result.Value.Body, result.Value.Subject);
+            StatusMessage = $"Message sent to topic '{topic}'.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Send failed: {ex.Message}";
         }
         finally
         {

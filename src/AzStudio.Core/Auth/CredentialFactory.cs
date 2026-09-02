@@ -23,30 +23,6 @@ public static class CredentialFactory
         };
     }
 
-    /// <summary>
-    /// Forces an actual token acquisition (triggering the interactive sign-in prompt right
-    /// now, if that's the auth mode) instead of letting it happen lazily on the first data
-    /// call. That way a failed/cancelled sign-in is reported immediately as "Connect" failing,
-    /// rather than surfacing later as an empty, unexplained container/topic list.
-    /// </summary>
-    public static async Task VerifySignInAsync(TokenCredential credential, CancellationToken ct = default)
-    {
-        try
-        {
-            var context = new TokenRequestContext(new[] { "https://management.azure.com/.default" });
-            await credential.GetTokenAsync(context, ct);
-        }
-        catch (CredentialUnavailableException ex)
-        {
-            throw new InvalidOperationException($"Sign-in unavailable: {ex.Message}", ex);
-        }
-        catch (AuthenticationFailedException ex)
-        {
-            throw new InvalidOperationException(
-                $"Sign-in failed: {ex.Message} If a browser window didn't appear, make sure a default browser is configured for this Windows user session.", ex);
-        }
-    }
-
     private static TokenCredential CreateServicePrincipalCredential(ConnectionProfile profile)
     {
         if (string.IsNullOrWhiteSpace(profile.TenantId))

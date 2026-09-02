@@ -14,7 +14,13 @@ Two authentication modes are supported per saved connection:
 
 A saved connection is just an identity (an auth mode + tenant, and optionally a default account/namespace). The account or namespace you actually browse is typed directly into the **Storage account** / **Namespace** box on each tab and can be changed at any time without editing or re-creating the connection — click **Load Containers** / **Load Topics & Queues** after typing a name to (re)connect to it. Clicking **Connect** in the left panel only establishes the Azure AD identity; it also auto-loads whichever tab(s) had a default name saved on the profile.
 
-Clicking **Connect** now also forces the sign-in to actually happen immediately (rather than lazily on first use), so a failed or cancelled interactive sign-in shows up right away as "Connection failed: ..." instead of as a silently empty container/topic list later. If you don't see a browser window appear for interactive sign-in, check that a default browser is configured for the Windows user session the app is running under (this matters most on a Windows Server where no browser may be set as default) — the status bar will report the specific sign-in error either way.
+Sign-in happens lazily, on the first real call to Storage or Service Bus (not at Connect time) — deliberately. Storage and Service Bus are different Azure resource audiences and each authenticates independently regardless; pre-fetching a token for an unrelated resource (e.g. Azure Resource Manager, which this app never calls) just adds a wasted extra sign-in round and can trigger a second, spurious interactive browser prompt in tenants with strict per-resource conditional access. Each tab's Load/Peek/Send command already reports auth failures clearly in its own status line, so nothing is lost by not pre-checking.
+
+### Service Bus: when you can't list queues/topics
+
+Azure Service Bus requires **namespace-wide "manage" rights** (e.g. *Azure Service Bus Data Owner*) just to *list* queues or topics via the admin client — this is separate from, and stricter than, the RBAC that lets you send/peek on one specific entity (e.g. *Azure Service Bus Data Receiver* scoped to a single queue). So it's entirely normal and expected for **Load Topics & Queues** to come back with a 401/403 for a user who has full access to one particular queue or topic/subscription but no ability to enumerate the namespace — that's not a bug, it's how Service Bus RBAC works, and it isn't fixable from the client side.
+
+For that case, use **Connect directly to a queue or topic** on the Service Bus → Browse tab: type the exact queue name (or topic + subscription name) you already know you have access to, and Peek/Send there directly — no listing involved. Listing queues and listing topics are also tried independently of each other, so having access to list one but not the other doesn't block the one you do have access to.
 
 ## Solution layout
 
