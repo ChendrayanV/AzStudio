@@ -101,7 +101,7 @@ public partial class ServiceBusTabViewModel : ObservableObject
         DirectQueueName = string.Empty;
         DirectTopicName = string.Empty;
         DirectSubscriptionName = string.Empty;
-        StatusMessage = "Connected. Enter a Service Bus namespace and load queues/topics — or connect directly to a specific queue/topic below.";
+        StatusMessage = "Connected. Enter a namespace and a queue or topic/subscription name above to connect directly, or use Load Topics & Queues below if you have list permission.";
         NotifyServiceCommands();
     }
 
@@ -222,7 +222,7 @@ public partial class ServiceBusTabViewModel : ObservableObject
                   $"You don't have permission to list {string.Join(" or ", deniedKinds)} in this namespace " +
                   "(that needs namespace-wide access, separate from access to one specific entity). " +
                   "If you know the exact queue or topic/subscription name you have access to, use " +
-                  "'Connect directly to a queue or topic' below instead.";
+                  "Use 'Connect directly to a queue or topic' above instead.";
         }
         catch (Exception ex)
         {
