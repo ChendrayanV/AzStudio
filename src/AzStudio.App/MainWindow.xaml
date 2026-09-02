@@ -109,7 +109,11 @@
                             <Button Content="Refresh Blobs" Style="{StaticResource SecondaryButton}" Command="{Binding LoadBlobsCommand}" />
                         </StackPanel>
 
-                        <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" />
+                        <StackPanel Grid.Row="3" Orientation="Horizontal">
+                            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" VerticalAlignment="Center" />
+                            <Button Content="Copy error details" Style="{StaticResource SecondaryButton}" Command="{Binding CopyErrorDetailsCommand}"
+                                    Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}" Margin="10,0,0,0" />
+                        </StackPanel>
                     </Grid>
 
                 <Grid DataContext="{Binding ServiceBus}" Visibility="{Binding DataContext.IsServiceBusSelected, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}">

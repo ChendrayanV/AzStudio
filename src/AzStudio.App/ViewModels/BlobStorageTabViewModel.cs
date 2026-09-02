@@ -5,6 +5,7 @@ using Azure.Core;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AzStudio.Core.Storage;
+using AzStudio.App.Utilities;
 using AzStudio.App.Views;
 using Microsoft.Win32;
 
@@ -33,6 +34,12 @@ public partial class BlobStorageTabViewModel : ObservableObject
     private string statusMessage = "Not connected.";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CopyErrorDetailsCommand))]
+    private bool hasError;
+
+    private string? _errorDetails;
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadBlobsCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteContainerCommand))]
     [NotifyCanExecuteChangedFor(nameof(UploadCommand))]
@@ -56,6 +63,7 @@ public partial class BlobStorageTabViewModel : ObservableObject
         Containers.Clear();
         Blobs.Clear();
         StatusMessage = "Connected. Enter a storage account name and load containers.";
+        ClearError();
         NotifyServiceCommands();
     }
 
@@ -67,6 +75,7 @@ public partial class BlobStorageTabViewModel : ObservableObject
         Containers.Clear();
         Blobs.Clear();
         StatusMessage = "Not connected.";
+        ClearError();
         NotifyServiceCommands();
     }
 
@@ -87,6 +96,29 @@ public partial class BlobStorageTabViewModel : ObservableObject
     }
 
     private bool CanRunService() => _credential is not null && !IsBusy;
+
+    private void SetError(string operation, Exception ex, string resourceLabel)
+    {
+        StatusMessage = FriendlyError.Summarize(ex, resourceLabel);
+        _errorDetails = FriendlyError.BuildDetails(operation, ex, resourceLabel);
+        HasError = true;
+    }
+
+    private void ClearError()
+    {
+        HasError = false;
+        _errorDetails = null;
+    }
+
+    private bool CanCopyErrorDetails() => HasError && _errorDetails is not null;
+
+    [RelayCommand(CanExecute = nameof(CanCopyErrorDetails))]
+    private void CopyErrorDetails()
+    {
+        if (_errorDetails is null) return;
+        Clipboard.SetText(_errorDetails);
+        StatusMessage = "Error details copied to clipboard — share them with your admin.";
+    }
 
     /// <summary>
     /// Builds (or rebuilds, if the account name field has changed) the BlobStorageService
@@ -128,10 +160,11 @@ public partial class BlobStorageTabViewModel : ObservableObject
             foreach (var c in containers) Containers.Add(c);
             Blobs.Clear();
             StatusMessage = $"{Containers.Count} container(s) loaded from '{_connectedAccountName}'.";
+            ClearError();
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Failed to load containers from '{_connectedAccountName}': {ex.Message}";
+            SetError("Load containers", ex, $"storage account '{_connectedAccountName}'");
         }
         finally
         {
@@ -161,10 +194,11 @@ public partial class BlobStorageTabViewModel : ObservableObject
             Blobs.Clear();
             foreach (var b in blobs) Blobs.Add(b);
             StatusMessage = $"{Blobs.Count} blob(s) loaded.";
+            ClearError();
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Failed to load blobs: {ex.Message}";
+            SetError("Load blobs", ex, $"container '{SelectedContainer.Name}'");
         }
         finally
         {
@@ -190,7 +224,7 @@ public partial class BlobStorageTabViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Failed to create container: {ex.Message}";
+            SetError("Create container", ex, $"container '{name}'");
         }
         finally
         {
@@ -217,7 +251,7 @@ public partial class BlobStorageTabViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Failed to delete container: {ex.Message}";
+            SetError("Delete container", ex, $"container '{SelectedContainer.Name}'");
         }
         finally
         {
@@ -243,7 +277,7 @@ public partial class BlobStorageTabViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Upload failed: {ex.Message}";
+            SetError("Upload blob", ex, $"blob '{Path.GetFileName(dialog.FileName)}'");
         }
         finally
         {
@@ -271,10 +305,11 @@ public partial class BlobStorageTabViewModel : ObservableObject
             await using var stream = File.Create(dialog.FileName);
             await _service.DownloadAsync(SelectedContainer.Name, SelectedBlob.Name, stream);
             StatusMessage = $"Downloaded '{SelectedBlob.Name}' to {dialog.FileName}.";
+            ClearError();
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Download failed: {ex.Message}";
+            SetError("Download blob", ex, $"blob '{SelectedBlob.Name}'");
         }
         finally
         {
@@ -299,7 +334,7 @@ public partial class BlobStorageTabViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Delete failed: {ex.Message}";
+            SetError("Delete blob", ex, $"blob '{SelectedBlob.Name}'");
         }
         finally
         {
