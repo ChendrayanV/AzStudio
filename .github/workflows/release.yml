@@ -1,0 +1,63 @@
+name: Release
+
+# Builds and publishes a new GitHub Release automatically whenever app code changes
+# land on main. Also runnable manually (workflow_dispatch) for a release with no code
+# change (e.g. after only touching docs).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "AzStudio.sln"
+      - ".github/workflows/release.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Compute version
+        id: version
+        shell: pwsh
+        run: |
+          $date = Get-Date -Format "yyyy.MM.dd"
+          $version = "v$date.${{ github.run_number }}"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build solution
+        run: dotnet build AzStudio.sln -c Release
+
+      - name: Publish self-contained executable
+        run: >
+          dotnet publish src/AzStudio.App/AzStudio.App.csproj -c Release -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o dist
+
+      - name: Tag and create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          git tag $version
+          git push origin $version
+          gh release create $version dist/AzStudio.exe `
+            --title "AzStudio $version" `
+            --notes "Automated release built from commit ${{ github.sha }}."

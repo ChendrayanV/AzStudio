@@ -4,8 +4,9 @@ obj/
 *.user
 *.suo
 
-## Publish output
+## Publish output (the released exe is attached to GitHub Releases, not committed — it's ~160MB, over GitHub's 100MB per-file commit limit)
 publish/
+dist/
 
 ## VS / Rider
 .vs/
