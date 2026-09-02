@@ -13,12 +13,12 @@ namespace AzStudio.Core.Auth;
 /// </summary>
 public static class CredentialFactory
 {
-    public static TokenCredential Create(ConnectionProfile profile)
+    public static async Task<TokenCredential> CreateAsync(ConnectionProfile profile, CancellationToken ct = default)
     {
         return profile.AuthType switch
         {
             AuthType.ServicePrincipal => CreateServicePrincipalCredential(profile),
-            AuthType.InteractiveUser => CreateInteractiveCredential(profile),
+            AuthType.InteractiveUser => await CreateInteractiveCredentialAsync(profile, ct),
             _ => throw new NotSupportedException($"Unsupported auth type: {profile.AuthType}")
         };
     }
@@ -44,7 +44,7 @@ public static class CredentialFactory
         return new ClientSecretCredential(profile.TenantId, profile.ClientId, secret);
     }
 
-    private static TokenCredential CreateInteractiveCredential(ConnectionProfile profile)
+    private static async Task<TokenCredential> CreateInteractiveCredentialAsync(ConnectionProfile profile, CancellationToken ct)
     {
         var options = new InteractiveBrowserCredentialOptions
         {
@@ -66,6 +66,39 @@ public static class CredentialFactory
             options.ClientId = profile.ClientId;
         }
 
-        return new InteractiveBrowserCredential(options);
+        // If we've signed this profile in before, hand the exact account back to MSAL so it
+        // resumes that account specifically, instead of guessing from whatever's in the cache.
+        var existingRecord = AuthenticationRecordStore.Load(profile.Id);
+        if (existingRecord is not null)
+        {
+            options.AuthenticationRecord = existingRecord;
+        }
+
+        var credential = new InteractiveBrowserCredential(options);
+
+        try
+        {
+            // Anchor the sign-in once, up front, with a lightweight default-scope
+            // authentication (not a request for any specific Azure resource's token).
+            // Blob Storage and Service Bus are separate token audiences, so without this
+            // anchor each one can independently decide silent reuse isn't possible and pop
+            // its own interactive prompt — this is what "Service Bus asks to log in again
+            // after Storage already worked" actually is. Once anchored, and the resulting
+            // record persisted, MSAL's silent token acquisition can resolve *any* later
+            // resource request against this same account without a new prompt.
+            var record = await credential.AuthenticateAsync(ct);
+            AuthenticationRecordStore.Save(profile.Id, record);
+        }
+        catch (CredentialUnavailableException ex)
+        {
+            throw new InvalidOperationException($"Sign-in unavailable: {ex.Message}", ex);
+        }
+        catch (AuthenticationFailedException ex)
+        {
+            throw new InvalidOperationException(
+                $"Sign-in failed: {ex.Message} If a browser window didn't appear, make sure a default browser is configured for this Windows user session.", ex);
+        }
+
+        return credential;
     }
 }

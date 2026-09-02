@@ -36,6 +36,13 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string? connectedConnectionName;
 
+    /// <summary>Which Azure Services nav entry is selected in the left pane; drives which service panel shows on the right.</summary>
+    [ObservableProperty]
+    private bool isStorageSelected = true;
+
+    [ObservableProperty]
+    private bool isServiceBusSelected;
+
     public MainViewModel()
     {
         foreach (var profile in _profileStore.Load())
@@ -77,18 +84,12 @@ public partial class MainViewModel : ObservableObject
         var profile = SelectedConnection;
 
         IsConnecting = true;
-        StatusMessage = "Connected. Sign-in happens per service when you first load data.";
+        StatusMessage = profile.AuthType == AuthType.InteractiveUser
+            ? "Signing in (check for a browser window)..."
+            : "Authenticating...";
         try
         {
-            var credential = CredentialFactory.Create(profile);
-
-            // Deliberately NOT forcing a token fetch here. Storage and Service Bus are
-            // different Azure resource audiences, so each authenticates separately on its
-            // own first use regardless — pre-fetching a token for an unrelated resource
-            // (e.g. Azure Resource Manager, which this app never calls) just adds a second,
-            // wasted sign-in round and can trigger an extra interactive prompt in tenants
-            // with strict per-resource conditional access. Each tab's Load command already
-            // surfaces auth failures clearly via its own try/catch.
+            var credential = await CredentialFactory.CreateAsync(profile);
 
             // Both tabs are activated with the shared credential regardless of whether a
             // default account/namespace was saved on this connection — the account/namespace

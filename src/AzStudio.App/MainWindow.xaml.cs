@@ -73,4 +73,21 @@ public partial class MainWindow : Window
             MessageDetailWindow.Show(this, message);
         }
     }
+
+    private void StorageNav_Checked(object sender, RoutedEventArgs e)
+    {
+        // XAML sets StorageNavRadio's IsChecked="True" as its initial state, which fires this
+        // handler during InitializeComponent() — before DataContext is assigned in the
+        // constructor below — so guard rather than assume ViewModel is available yet.
+        if (DataContext is not MainViewModel vm) return;
+        vm.IsStorageSelected = true;
+        vm.IsServiceBusSelected = false;
+    }
+
+    private void ServiceBusNav_Checked(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        vm.IsServiceBusSelected = true;
+        vm.IsStorageSelected = false;
+    }
 }

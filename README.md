@@ -10,11 +10,19 @@ Two authentication modes are supported per saved connection:
 - **Service Principal** — Tenant ID, Client (App) ID, Client secret.
 - **Sign in as user (Azure AD)** — interactive browser sign-in (MSAL via `Azure.Identity`), with the signed-in token cached to disk so you aren't prompted every launch.
 
+### Navigating: Connections vs. Azure Services
+
+The left pane has two blocks. **Connections** (top) is where you pick/manage the saved identity and click **Connect**/**Disconnect**. **Azure Services** (below it, enabled once connected) is where you pick which service's panel shows on the right — **Storage** or **Service Bus**. Switching between them doesn't reconnect or lose state; each service panel keeps its own account/namespace field, lists, and last-loaded data independently.
+
 ### Connecting to a specific storage account / Service Bus namespace
 
-A saved connection is just an identity (an auth mode + tenant, and optionally a default account/namespace). The account or namespace you actually browse is typed directly into the **Storage account** / **Namespace** box on each tab and can be changed at any time without editing or re-creating the connection — click **Load Containers** / **Load Topics & Queues** after typing a name to (re)connect to it. Clicking **Connect** in the left panel only establishes the Azure AD identity; it also auto-loads whichever tab(s) had a default name saved on the profile.
+A saved connection is just an identity (an auth mode + tenant, and optionally a default account/namespace). The account or namespace you actually browse is typed directly into the **Storage account** / **Namespace** box on each service panel and can be changed at any time without editing or re-creating the connection — click **Load Containers** / **Load Topics & Queues** after typing a name to (re)connect to it. Clicking **Connect** in the left panel only establishes the Azure AD identity; it also auto-loads whichever service had a default name saved on the profile.
 
-Sign-in happens lazily, on the first real call to Storage or Service Bus (not at Connect time) — deliberately. Storage and Service Bus are different Azure resource audiences and each authenticates independently regardless; pre-fetching a token for an unrelated resource (e.g. Azure Resource Manager, which this app never calls) just adds a wasted extra sign-in round and can trigger a second, spurious interactive browser prompt in tenants with strict per-resource conditional access. Each tab's Load/Peek/Send command already reports auth failures clearly in its own status line, so nothing is lost by not pre-checking.
+### Why sign-in shouldn't ask twice
+
+For **Sign in as user (Azure AD)**, clicking **Connect** performs one lightweight sign-in up front (`InteractiveBrowserCredential.AuthenticateAsync()` — establishing the account, not requesting any specific Azure resource's token) and persists the resulting MSAL `AuthenticationRecord` to `%APPDATA%\AzStudio\auth-records\{connectionId}.json`. That record — not a secret, just account/tenant identifiers — is what lets every later request, for Storage *or* Service Bus (they're separate token audiences), silently resume the same signed-in account instead of independently deciding it needs its own fresh interactive prompt. It's also reused on the next **Connect** for the same saved connection, including across app restarts, so in the normal case you sign in interactively once, ever, per connection.
+
+If Connect still prompts you twice, or a specific service still fails to authenticate, check first whether the error is actually about authentication — Storage/Service Bus errors that look like a permissions problem are sometimes really a DNS/network reachability failure (e.g. "the requested name is valid but no data of the requested type was found" for `<account>.blob.core.windows.net` means the name doesn't resolve — often a private-endpoint account that needs to be reached over VPN/private DNS, or a typo'd account name), not a 401/403.
 
 ### Service Bus: connect directly, or browse
 

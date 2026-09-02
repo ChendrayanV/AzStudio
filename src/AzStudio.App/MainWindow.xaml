@@ -33,11 +33,17 @@
                          ItemsSource="{Binding Connections}"
                          SelectedItem="{Binding SelectedConnection, Mode=TwoWay}"
                          DisplayMemberPath="Name"
-                         Margin="12,0,12,8" MinHeight="140" MaxHeight="260" />
+                         Margin="12,0,12,8" MinHeight="110" MaxHeight="170" />
 
-                <StackPanel DockPanel.Dock="Top" Margin="12,0,12,8">
+                <StackPanel DockPanel.Dock="Top" Margin="12,0,12,20">
                     <Button Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,0,6" />
                     <Button Content="Disconnect" Style="{StaticResource SecondaryButton}" Command="{Binding DisconnectCommand}" Margin="0" />
+                </StackPanel>
+
+                <TextBlock DockPanel.Dock="Top" Text="Azure Services" Style="{StaticResource SectionHeader}" Margin="12,0,12,6" />
+                <StackPanel DockPanel.Dock="Top" Margin="8,0,8,20" IsEnabled="{Binding IsConnected}">
+                    <RadioButton x:Name="StorageNavRadio" GroupName="ServiceNav" Style="{StaticResource NavItem}" Content="Storage" IsChecked="True" Checked="StorageNav_Checked" />
+                    <RadioButton x:Name="ServiceBusNavRadio" GroupName="ServiceNav" Style="{StaticResource NavItem}" Content="Service Bus" Checked="ServiceBusNav_Checked" />
                 </StackPanel>
 
                 <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,0" Padding="12" Margin="0,20,0,0">
@@ -50,10 +56,9 @@
                 <Grid />
             </DockPanel>
 
-            <!-- Service tabs -->
-            <TabControl Grid.Column="1" Margin="0" IsEnabled="{Binding IsConnected}">
-                <TabItem Header="Blob Storage" DataContext="{Binding BlobStorage}">
-                    <Grid Margin="16">
+            <!-- Service panels, chosen by the "Azure Services" nav in the left pane -->
+            <Grid Grid.Column="1" Margin="0" IsEnabled="{Binding IsConnected}">
+                <Grid DataContext="{Binding BlobStorage}" Visibility="{Binding DataContext.IsStorageSelected, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}" Margin="16">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
@@ -62,7 +67,7 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
-                            <TextBlock Text="Storage account:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Storage account:" Style="{StaticResource InlineFieldLabel}" />
                             <TextBox Text="{Binding StorageAccountName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,10,0" />
                             <Button Content="Load Containers" Command="{Binding LoadContainersCommand}" />
                             <Button Content="New Container" Command="{Binding CreateContainerCommand}" />
@@ -106,9 +111,8 @@
 
                         <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" />
                     </Grid>
-                </TabItem>
 
-                <TabItem Header="Service Bus" DataContext="{Binding ServiceBus}">
+                <Grid DataContext="{Binding ServiceBus}" Visibility="{Binding DataContext.IsServiceBusSelected, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}">
                     <TabControl Margin="0" Padding="0">
                     <TabItem Header="Browse">
                     <Grid Margin="16">
@@ -126,20 +130,20 @@
                             <StackPanel>
                                 <TextBlock Text="Connect directly to a queue or topic" Style="{StaticResource SectionHeader}" />
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <TextBlock Text="Namespace:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Namespace:" Style="{StaticResource InlineFieldLabel}" />
                                     <TextBox Text="{Binding NamespaceName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,20,0" />
                                     <CheckBox Content="View dead-letter messages" IsChecked="{Binding ViewDeadLetter}" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <TextBlock Text="Queue:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Queue:" Style="{StaticResource InlineFieldLabel}" />
                                     <TextBox Text="{Binding DirectQueueName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
                                     <Button Content="Peek" Command="{Binding PeekDirectQueueCommand}" />
                                     <Button Content="Send..." Command="{Binding SendDirectQueueMessageCommand}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Topic:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <TextBox Text="{Binding DirectTopicName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
-                                    <TextBlock Text="Subscription:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Topic:" Style="{StaticResource InlineFieldLabel}" />
+                                    <TextBox Text="{Binding DirectTopicName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,20,0" />
+                                    <TextBlock Text="Subscription:" VerticalAlignment="Center" Margin="0,0,8,0" />
                                     <TextBox Text="{Binding DirectSubscriptionName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
                                     <Button Content="Peek" Command="{Binding PeekDirectSubscriptionCommand}" />
                                     <Button Content="Send..." Command="{Binding SendDirectTopicMessageCommand}" />
@@ -256,8 +260,8 @@
                         </Grid>
                     </TabItem>
                     </TabControl>
-                </TabItem>
-            </TabControl>
+                </Grid>
+            </Grid>
         </Grid>
 
         <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,0" Padding="12,6">

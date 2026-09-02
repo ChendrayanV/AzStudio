@@ -9,6 +9,9 @@
             <SolidColorBrush x:Key="AccentDarkBrush" Color="#005A9E" />
             <SolidColorBrush x:Key="BorderBrush2" Color="#D0D5DA" />
             <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#F3F3F3" />
+            <SolidColorBrush x:Key="NavHoverBrush" Color="#E4E6E9" />
+
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
             <Style TargetType="Button">
                 <Setter Property="Padding" Value="10,5" />
@@ -77,6 +80,43 @@
             <Style x:Key="FieldLabel" TargetType="TextBlock">
                 <Setter Property="Margin" Value="0,8,0,2" />
                 <Setter Property="Foreground" Value="#3B3F45" />
+            </Style>
+
+            <!-- Label preceding an inline field (e.g. "Namespace:  [textbox]"). Fixed, right-aligned
+                 width so every field on a panel starts at the same x-position regardless of label length. -->
+            <Style x:Key="InlineFieldLabel" TargetType="TextBlock">
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="TextAlignment" Value="Right" />
+                <Setter Property="MinWidth" Value="112" />
+                <Setter Property="Margin" Value="0,0,8,0" />
+            </Style>
+
+            <!-- Left-hand "Azure Services" navigation entry (Storage / Service Bus). -->
+            <Style x:Key="NavItem" TargetType="RadioButton">
+                <Setter Property="Padding" Value="14,10" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Margin" Value="0,0,0,2" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource NavHoverBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentBrush}" />
+                                    <Setter Property="Foreground" Value="White" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
         </ResourceDictionary>
     </Application.Resources>
