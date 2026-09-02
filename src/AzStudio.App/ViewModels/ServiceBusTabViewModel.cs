@@ -53,6 +53,14 @@ public partial class ServiceBusTabViewModel : ObservableObject
     [ObservableProperty]
     private string peekedMessagesSource = string.Empty;
 
+    /// <summary>
+    /// When set, every Peek (selected-item or direct-entry) reads from the entity's
+    /// dead-letter sub-queue instead of its main queue — a separate Azure Service Bus
+    /// concept (SubQueue.DeadLetter), not a different entity you'd type a name for.
+    /// </summary>
+    [ObservableProperty]
+    private bool viewDeadLetter;
+
     // Direct-entry fields: connecting straight to a named queue, or a named topic +
     // subscription, without going through ListQueuesAsync/ListTopicsAsync first. Azure
     // Service Bus requires namespace-wide "manage" rights just to list entities — a user
@@ -101,6 +109,7 @@ public partial class ServiceBusTabViewModel : ObservableObject
         DirectQueueName = string.Empty;
         DirectTopicName = string.Empty;
         DirectSubscriptionName = string.Empty;
+        ViewDeadLetter = false;
         StatusMessage = "Connected. Enter a namespace and a queue or topic/subscription name above to connect directly, or use Load Topics & Queues below if you have list permission.";
         NotifyServiceCommands();
     }
@@ -120,6 +129,7 @@ public partial class ServiceBusTabViewModel : ObservableObject
         DirectQueueName = string.Empty;
         DirectTopicName = string.Empty;
         DirectSubscriptionName = string.Empty;
+        ViewDeadLetter = false;
         StatusMessage = "Not connected.";
         NotifyServiceCommands();
     }
@@ -302,10 +312,10 @@ public partial class ServiceBusTabViewModel : ObservableObject
         try
         {
             StatusMessage = "Peeking messages...";
-            var messages = await _service.PeekMessagesAsync(SelectedTopic.Name, SelectedSubscription.Name);
+            var messages = await _service.PeekMessagesAsync(SelectedTopic.Name, SelectedSubscription.Name, deadLetter: ViewDeadLetter);
             PeekedMessages.Clear();
             foreach (var m in messages) PeekedMessages.Add(m);
-            PeekedMessagesSource = $"Topic '{SelectedTopic.Name}' / Subscription '{SelectedSubscription.Name}'";
+            PeekedMessagesSource = $"Topic '{SelectedTopic.Name}' / Subscription '{SelectedSubscription.Name}'{(ViewDeadLetter ? " (DLQ)" : "")}";
             StatusMessage = $"{PeekedMessages.Count} message(s) peeked (non-destructive). Double-click a row for full details.";
         }
         catch (Exception ex)
@@ -328,10 +338,10 @@ public partial class ServiceBusTabViewModel : ObservableObject
         try
         {
             StatusMessage = $"Peeking messages in queue '{SelectedQueue.Name}'...";
-            var messages = await _service.PeekQueueMessagesAsync(SelectedQueue.Name);
+            var messages = await _service.PeekQueueMessagesAsync(SelectedQueue.Name, deadLetter: ViewDeadLetter);
             PeekedMessages.Clear();
             foreach (var m in messages) PeekedMessages.Add(m);
-            PeekedMessagesSource = $"Queue '{SelectedQueue.Name}'";
+            PeekedMessagesSource = $"Queue '{SelectedQueue.Name}'{(ViewDeadLetter ? " (DLQ)" : "")}";
             StatusMessage = $"{PeekedMessages.Count} message(s) peeked (non-destructive). Double-click a row for full details.";
         }
         catch (Exception ex)
@@ -442,10 +452,10 @@ public partial class ServiceBusTabViewModel : ObservableObject
         try
         {
             StatusMessage = $"Peeking messages in queue '{name}'...";
-            var messages = await service.PeekQueueMessagesAsync(name);
+            var messages = await service.PeekQueueMessagesAsync(name, deadLetter: ViewDeadLetter);
             PeekedMessages.Clear();
             foreach (var m in messages) PeekedMessages.Add(m);
-            PeekedMessagesSource = $"Queue '{name}'";
+            PeekedMessagesSource = $"Queue '{name}'{(ViewDeadLetter ? " (DLQ)" : "")}";
             StatusMessage = $"{PeekedMessages.Count} message(s) peeked from '{name}' (non-destructive). Double-click a row for full details.";
         }
         catch (Exception ex)
@@ -508,10 +518,10 @@ public partial class ServiceBusTabViewModel : ObservableObject
         try
         {
             StatusMessage = $"Peeking messages in '{topic}' / '{subscription}'...";
-            var messages = await service.PeekMessagesAsync(topic, subscription);
+            var messages = await service.PeekMessagesAsync(topic, subscription, deadLetter: ViewDeadLetter);
             PeekedMessages.Clear();
             foreach (var m in messages) PeekedMessages.Add(m);
-            PeekedMessagesSource = $"Topic '{topic}' / Subscription '{subscription}'";
+            PeekedMessagesSource = $"Topic '{topic}' / Subscription '{subscription}'{(ViewDeadLetter ? " (DLQ)" : "")}";
             StatusMessage = $"{PeekedMessages.Count} message(s) peeked (non-destructive). Double-click a row for full details.";
         }
         catch (Exception ex)

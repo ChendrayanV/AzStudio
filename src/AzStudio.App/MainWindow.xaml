@@ -127,7 +127,8 @@
                                 <TextBlock Text="Connect directly to a queue or topic" Style="{StaticResource SectionHeader}" />
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <TextBlock Text="Namespace:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <TextBox Text="{Binding NamespaceName}" Width="220" VerticalContentAlignment="Center" />
+                                    <TextBox Text="{Binding NamespaceName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,20,0" />
+                                    <CheckBox Content="View dead-letter messages" IsChecked="{Binding ViewDeadLetter}" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <TextBlock Text="Queue:" VerticalAlignment="Center" Margin="0,0,6,0" />

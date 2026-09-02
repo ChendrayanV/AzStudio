@@ -78,22 +78,24 @@ public class ServiceBusService : IAsyncDisposable
         return results;
     }
 
-    public async Task<List<PeekedMessageInfo>> PeekQueueMessagesAsync(string queueName, int maxMessages = 100, CancellationToken ct = default)
+    public async Task<List<PeekedMessageInfo>> PeekQueueMessagesAsync(string queueName, int maxMessages = 100, bool deadLetter = false, CancellationToken ct = default)
     {
         await using var receiver = DataClient.CreateReceiver(queueName, new ServiceBusReceiverOptions
         {
-            ReceiveMode = ServiceBusReceiveMode.PeekLock
+            ReceiveMode = ServiceBusReceiveMode.PeekLock,
+            SubQueue = deadLetter ? SubQueue.DeadLetter : SubQueue.None
         });
 
         var messages = await receiver.PeekMessagesAsync(maxMessages, cancellationToken: ct);
         return messages.Select(ToPeekedMessageInfo).ToList();
     }
 
-    public async Task<List<PeekedMessageInfo>> PeekMessagesAsync(string topicName, string subscriptionName, int maxMessages = 100, CancellationToken ct = default)
+    public async Task<List<PeekedMessageInfo>> PeekMessagesAsync(string topicName, string subscriptionName, int maxMessages = 100, bool deadLetter = false, CancellationToken ct = default)
     {
         await using var receiver = DataClient.CreateReceiver(topicName, subscriptionName, new ServiceBusReceiverOptions
         {
-            ReceiveMode = ServiceBusReceiveMode.PeekLock
+            ReceiveMode = ServiceBusReceiveMode.PeekLock,
+            SubQueue = deadLetter ? SubQueue.DeadLetter : SubQueue.None
         });
 
         var messages = await receiver.PeekMessagesAsync(maxMessages, cancellationToken: ct);
@@ -142,13 +144,25 @@ public class ServiceBusService : IAsyncDisposable
         {
             try
             {
-                var peeked = await PeekQueueMessagesAsync(queue.Name, maxMessagesPerEntity, ct);
+                var peeked = await PeekQueueMessagesAsync(queue.Name, maxMessagesPerEntity, deadLetter: false, ct);
                 messages.AddRange(peeked.Select(m => ToAggregated($"Queue: {queue.Name}", m)));
             }
             catch (Exception ex) when (IsAccessDenied(ex))
             {
                 entitiesSkipped++;
                 skipReasons.Add($"Queue '{queue.Name}': access denied peeking messages.");
+            }
+
+            if (queue.DeadLetterMessageCount <= 0) continue;
+            try
+            {
+                var peeked = await PeekQueueMessagesAsync(queue.Name, maxMessagesPerEntity, deadLetter: true, ct);
+                messages.AddRange(peeked.Select(m => ToAggregated($"Queue: {queue.Name} (DLQ)", m)));
+            }
+            catch (Exception ex) when (IsAccessDenied(ex))
+            {
+                entitiesSkipped++;
+                skipReasons.Add($"Queue '{queue.Name}' dead-letter: access denied peeking messages.");
             }
         }
 
@@ -182,13 +196,25 @@ public class ServiceBusService : IAsyncDisposable
                 subscriptionsScanned++;
                 try
                 {
-                    var peeked = await PeekMessagesAsync(topic.Name, subscription.Name, maxMessagesPerEntity, ct);
+                    var peeked = await PeekMessagesAsync(topic.Name, subscription.Name, maxMessagesPerEntity, deadLetter: false, ct);
                     messages.AddRange(peeked.Select(m => ToAggregated($"Topic: {topic.Name} / Sub: {subscription.Name}", m)));
                 }
                 catch (Exception ex) when (IsAccessDenied(ex))
                 {
                     entitiesSkipped++;
                     skipReasons.Add($"Topic '{topic.Name}' / Subscription '{subscription.Name}': access denied peeking messages.");
+                }
+
+                if (subscription.DeadLetterMessageCount <= 0) continue;
+                try
+                {
+                    var peeked = await PeekMessagesAsync(topic.Name, subscription.Name, maxMessagesPerEntity, deadLetter: true, ct);
+                    messages.AddRange(peeked.Select(m => ToAggregated($"Topic: {topic.Name} / Sub: {subscription.Name} (DLQ)", m)));
+                }
+                catch (Exception ex) when (IsAccessDenied(ex))
+                {
+                    entitiesSkipped++;
+                    skipReasons.Add($"Topic '{topic.Name}' / Subscription '{subscription.Name}' dead-letter: access denied peeking messages.");
                 }
             }
         }
