@@ -142,6 +142,7 @@
                                     <TextBlock Text="Queue:" Style="{StaticResource InlineFieldLabel}" />
                                     <TextBox Text="{Binding DirectQueueName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
                                     <Button Content="Peek" Command="{Binding PeekDirectQueueCommand}" />
+                                    <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshDirectQueueMessagesCommand}" />
                                     <Button Content="Send..." Command="{Binding SendDirectQueueMessageCommand}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
@@ -150,6 +151,7 @@
                                     <TextBlock Text="Subscription:" VerticalAlignment="Center" Margin="0,0,8,0" />
                                     <TextBox Text="{Binding DirectSubscriptionName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
                                     <Button Content="Peek" Command="{Binding PeekDirectSubscriptionCommand}" />
+                                    <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshDirectSubscriptionMessagesCommand}" />
                                     <Button Content="Send..." Command="{Binding SendDirectTopicMessageCommand}" />
                                 </StackPanel>
                             </StackPanel>

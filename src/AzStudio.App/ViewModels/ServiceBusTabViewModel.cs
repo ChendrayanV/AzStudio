@@ -27,8 +27,10 @@ public partial class ServiceBusTabViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(SendQueueMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ScanAllMessagesCommand))]
     [NotifyCanExecuteChangedFor(nameof(PeekDirectQueueCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshDirectQueueMessagesCommand))]
     [NotifyCanExecuteChangedFor(nameof(SendDirectQueueMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(PeekDirectSubscriptionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshDirectSubscriptionMessagesCommand))]
     [NotifyCanExecuteChangedFor(nameof(SendDirectTopicMessageCommand))]
     private bool isBusy;
 
@@ -67,12 +69,20 @@ public partial class ServiceBusTabViewModel : ObservableObject
     // whose RBAC role is scoped to one specific queue/topic can legitimately have zero
     // ability to list anything, even though they can send/peek on that one entity directly.
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PeekDirectQueueCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshDirectQueueMessagesCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SendDirectQueueMessageCommand))]
     private string directQueueName = string.Empty;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PeekDirectSubscriptionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshDirectSubscriptionMessagesCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SendDirectTopicMessageCommand))]
     private string directTopicName = string.Empty;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PeekDirectSubscriptionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshDirectSubscriptionMessagesCommand))]
     private string directSubscriptionName = string.Empty;
 
     public ObservableCollection<QueueInfo> Queues { get; } = new();
@@ -149,12 +159,20 @@ public partial class ServiceBusTabViewModel : ObservableObject
         SendQueueMessageCommand.NotifyCanExecuteChanged();
         ScanAllMessagesCommand.NotifyCanExecuteChanged();
         PeekDirectQueueCommand.NotifyCanExecuteChanged();
+        RefreshDirectQueueMessagesCommand.NotifyCanExecuteChanged();
         SendDirectQueueMessageCommand.NotifyCanExecuteChanged();
         PeekDirectSubscriptionCommand.NotifyCanExecuteChanged();
+        RefreshDirectSubscriptionMessagesCommand.NotifyCanExecuteChanged();
         SendDirectTopicMessageCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanRunService() => _credential is not null && !IsBusy;
+
+    private bool CanRunDirectQueue() => CanRunService() && !string.IsNullOrWhiteSpace(DirectQueueName);
+
+    private bool CanRunDirectTopic() => CanRunService() && !string.IsNullOrWhiteSpace(DirectTopicName);
+
+    private bool CanRunDirectSubscription() => CanRunService() && !string.IsNullOrWhiteSpace(DirectTopicName) && !string.IsNullOrWhiteSpace(DirectSubscriptionName);
 
     /// <summary>
     /// Builds (or rebuilds, if the namespace field has changed) the ServiceBusService
@@ -435,8 +453,13 @@ public partial class ServiceBusTabViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanRunService))]
-    private async Task PeekDirectQueueAsync()
+    [RelayCommand(CanExecute = nameof(CanRunDirectQueue))]
+    private Task PeekDirectQueueAsync() => PeekDirectQueueCoreAsync();
+
+    [RelayCommand(CanExecute = nameof(CanRunDirectQueue))]
+    private Task RefreshDirectQueueMessagesAsync() => PeekDirectQueueCoreAsync();
+
+    private async Task PeekDirectQueueCoreAsync()
     {
         var service = EnsureService();
         if (service is null) return;
@@ -468,7 +491,7 @@ public partial class ServiceBusTabViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanRunService))]
+    [RelayCommand(CanExecute = nameof(CanRunDirectQueue))]
     private async Task SendDirectQueueMessageAsync()
     {
         var service = EnsureService();
@@ -500,8 +523,13 @@ public partial class ServiceBusTabViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanRunService))]
-    private async Task PeekDirectSubscriptionAsync()
+    [RelayCommand(CanExecute = nameof(CanRunDirectSubscription))]
+    private Task PeekDirectSubscriptionAsync() => PeekDirectSubscriptionCoreAsync();
+
+    [RelayCommand(CanExecute = nameof(CanRunDirectSubscription))]
+    private Task RefreshDirectSubscriptionMessagesAsync() => PeekDirectSubscriptionCoreAsync();
+
+    private async Task PeekDirectSubscriptionCoreAsync()
     {
         var service = EnsureService();
         if (service is null) return;
@@ -534,7 +562,7 @@ public partial class ServiceBusTabViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanRunService))]
+    [RelayCommand(CanExecute = nameof(CanRunDirectTopic))]
     private async Task SendDirectTopicMessageAsync()
     {
         var service = EnsureService();

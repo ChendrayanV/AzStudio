@@ -25,9 +25,11 @@ public static class FriendlyError
         {
             if (rfe.ErrorCode == "AuthorizationPermissionMismatch")
             {
-                return $"Access denied to '{resourceLabel}'. Your Azure AD account has no data-plane role here — " +
-                       "seeing it in the Portal doesn't count, that often uses the storage account key instead. " +
-                       "Ask an admin for the 'Storage Blob Data Reader' (or Contributor) role on this storage account.";
+                return $"Access denied to '{resourceLabel}'. Management-plane roles like 'Owner', 'Contributor', or " +
+                       "'Storage Account Contributor' do NOT grant this, no matter how broad they look — Azure Storage " +
+                       "only honors a separate data-plane role for Azure AD access. Ask an admin for 'Storage Blob Data " +
+                       "Reader' (or 'Storage Blob Data Contributor') specifically, as its own role assignment on this " +
+                       "storage account.";
             }
 
             return rfe.Status switch
