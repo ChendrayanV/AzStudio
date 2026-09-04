@@ -10,6 +10,10 @@
             <SolidColorBrush x:Key="BorderBrush2" Color="#D0D5DA" />
             <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#F3F3F3" />
             <SolidColorBrush x:Key="NavHoverBrush" Color="#E4E6E9" />
+            <SolidColorBrush x:Key="ConnectedBrush" Color="#2E7D32" />
+            <SolidColorBrush x:Key="DisconnectedBrush" Color="#C0392B" />
+
+            <FontFamily x:Key="AppFontFamily">./Assets/Fonts/#Montserrat, Segoe UI</FontFamily>
 
             <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
@@ -117,6 +121,31 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+            </Style>
+
+            <!-- Small filled dot showing MainViewModel.IsConnected: red while disconnected, green once connected. -->
+            <Style x:Key="ConnectionStatusDot" TargetType="Ellipse">
+                <Setter Property="Fill" Value="{StaticResource DisconnectedBrush}" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                        <Setter Property="Fill" Value="{StaticResource ConnectedBrush}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Drag handle between two side-by-side list/detail panes (Containers|Blobs, Secrets|Versions, etc). -->
+            <Style x:Key="PanelSplitter" TargetType="GridSplitter">
+                <Setter Property="Width" Value="6" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="VerticalAlignment" Value="Stretch" />
+                <Setter Property="Background" Value="{StaticResource BorderBrush2}" />
+                <Setter Property="Cursor" Value="SizeWE" />
+                <Setter Property="ShowsPreview" Value="True" />
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                    </Trigger>
+                </Style.Triggers>
             </Style>
         </ResourceDictionary>
     </Application.Resources>

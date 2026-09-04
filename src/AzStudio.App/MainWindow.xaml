@@ -6,7 +6,9 @@
         xmlns:local="clr-namespace:AzStudio.App"
         xmlns:vm="clr-namespace:AzStudio.App.ViewModels"
         mc:Ignorable="d"
-        Title="AzStudio" Height="700" Width="1150" MinHeight="500" MinWidth="850">
+        Title="AzStudio" Height="700" Width="1150" MinHeight="500" MinWidth="850"
+        FontFamily="{StaticResource AppFontFamily}"
+        Icon="Assets/Icons/app.ico">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -42,8 +44,24 @@
 
                 <TextBlock DockPanel.Dock="Top" Text="Azure Services" Style="{StaticResource SectionHeader}" Margin="12,0,12,6" />
                 <StackPanel DockPanel.Dock="Top" Margin="8,0,8,20" IsEnabled="{Binding IsConnected}">
-                    <RadioButton x:Name="StorageNavRadio" GroupName="ServiceNav" Style="{StaticResource NavItem}" Content="Storage" IsChecked="True" Checked="StorageNav_Checked" />
-                    <RadioButton x:Name="ServiceBusNavRadio" GroupName="ServiceNav" Style="{StaticResource NavItem}" Content="Service Bus" Checked="ServiceBusNav_Checked" />
+                    <RadioButton x:Name="StorageNavRadio" GroupName="ServiceNav" Style="{StaticResource NavItem}" IsChecked="True" Checked="StorageNav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="Assets/Icons/storage.png" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="Storage" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="ServiceBusNavRadio" GroupName="ServiceNav" Style="{StaticResource NavItem}" Checked="ServiceBusNav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="Assets/Icons/service-bus.png" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="Service Bus" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="KeyVaultNavRadio" GroupName="ServiceNav" Style="{StaticResource NavItem}" Checked="KeyVaultNav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="Assets/Icons/key-vault.png" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="Key Vault" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
                 </StackPanel>
 
                 <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,0" Padding="12" Margin="0,20,0,0">
@@ -76,18 +94,21 @@
 
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="240" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="240" MinWidth="150" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" MinWidth="240" />
                             </Grid.ColumnDefinitions>
 
-                            <DockPanel Grid.Column="0" Margin="0,0,10,0">
+                            <DockPanel Grid.Column="0" Margin="0,0,6,0">
                                 <TextBlock DockPanel.Dock="Top" Text="Containers" Style="{StaticResource SectionHeader}" />
                                 <ListBox ItemsSource="{Binding Containers}"
                                          SelectedItem="{Binding SelectedContainer, Mode=TwoWay}"
                                          DisplayMemberPath="Name" />
                             </DockPanel>
 
-                            <DockPanel Grid.Column="1">
+                            <GridSplitter Grid.Column="1" Style="{StaticResource PanelSplitter}" />
+
+                            <DockPanel Grid.Column="2" Margin="6,0,0,0">
                                 <TextBlock DockPanel.Dock="Top" Text="Blobs" Style="{StaticResource SectionHeader}" />
                                 <ListView ItemsSource="{Binding Blobs}" SelectedItem="{Binding SelectedBlob, Mode=TwoWay}">
                                     <ListView.View>
@@ -116,165 +137,155 @@
                         </StackPanel>
                     </Grid>
 
-                <Grid DataContext="{Binding ServiceBus}" Visibility="{Binding DataContext.IsServiceBusSelected, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}">
-                    <TabControl Margin="0" Padding="0">
-                    <TabItem Header="Browse">
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="2*" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="2*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                <Grid DataContext="{Binding ServiceBus}" Visibility="{Binding DataContext.IsServiceBusSelected, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}" Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                        <Border Grid.Row="0" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,16">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                        <TextBlock Text="Namespace:" Style="{StaticResource InlineFieldLabel}" />
+                        <TextBox Text="{Binding NamespaceName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,20,0" />
+                        <CheckBox Content="View dead-letter messages" IsChecked="{Binding ViewDeadLetter}" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="12">
                             <StackPanel>
-                                <TextBlock Text="Connect directly to a queue or topic" Style="{StaticResource SectionHeader}" />
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <TextBlock Text="Namespace:" Style="{StaticResource InlineFieldLabel}" />
-                                    <TextBox Text="{Binding NamespaceName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,20,0" />
-                                    <CheckBox Content="View dead-letter messages" IsChecked="{Binding ViewDeadLetter}" VerticalAlignment="Center" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <TextBlock Text="Queue:" Style="{StaticResource InlineFieldLabel}" />
-                                    <TextBox Text="{Binding DirectQueueName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                                <TextBlock Text="Queue" Style="{StaticResource SectionHeader}" />
+                                <TextBox Text="{Binding DirectQueueName}" Margin="0,0,0,10" />
+                                <StackPanel Orientation="Horizontal">
                                     <Button Content="Peek" Command="{Binding PeekDirectQueueCommand}" />
                                     <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshDirectQueueMessagesCommand}" />
                                     <Button Content="Send..." Command="{Binding SendDirectQueueMessageCommand}" />
                                 </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="Topic &amp; Subscription" Style="{StaticResource SectionHeader}" />
+                                <TextBlock Text="Topic" Style="{StaticResource FieldLabel}" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding DirectTopicName}" Margin="0,0,0,8" />
+                                <TextBlock Text="Subscription (for Peek — Send targets the topic itself)" Style="{StaticResource FieldLabel}" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding DirectSubscriptionName}" Margin="0,0,0,10" />
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Topic:" Style="{StaticResource InlineFieldLabel}" />
-                                    <TextBox Text="{Binding DirectTopicName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,20,0" />
-                                    <TextBlock Text="Subscription:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBox Text="{Binding DirectSubscriptionName}" Width="180" VerticalContentAlignment="Center" Margin="0,0,10,0" />
                                     <Button Content="Peek" Command="{Binding PeekDirectSubscriptionCommand}" />
                                     <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshDirectSubscriptionMessagesCommand}" />
                                     <Button Content="Send..." Command="{Binding SendDirectTopicMessageCommand}" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+                    </Grid>
 
-                        <TextBlock Grid.Row="1" Text="Or browse (needs namespace-wide list permission):" Style="{StaticResource SectionHeader}" Margin="0,0,0,8" />
+                    <DockPanel Grid.Row="2">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}">
+                            <Run Text="Peeked Messages (non-destructive) — double-click a row for full details" />
+                            <Run Text=" — " />
+                            <Run Text="{Binding PeekedMessagesSource}" FontWeight="Normal" />
+                        </TextBlock>
+                        <ListView x:Name="PeekedMessagesListView" ItemsSource="{Binding PeekedMessages}"
+                                  MouseDoubleClick="PeekedMessagesListView_MouseDoubleClick">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Seq #" DisplayMemberBinding="{Binding SequenceNumber}" Width="70" />
+                                    <GridViewColumn Header="Message ID" DisplayMemberBinding="{Binding MessageId}" Width="200" />
+                                    <GridViewColumn Header="Subject" DisplayMemberBinding="{Binding Subject}" Width="150" />
+                                    <GridViewColumn Header="Enqueued" DisplayMemberBinding="{Binding EnqueuedTime}" Width="160" />
+                                    <GridViewColumn Header="Body" DisplayMemberBinding="{Binding Body}" Width="400" />
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </DockPanel>
 
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">
-                            <Button Content="Load Topics &amp; Queues" Command="{Binding LoadTopicsAndQueuesCommand}" />
-                            <Button Content="Send to Selected Topic..." Command="{Binding SendTopicMessageCommand}" />
-                            <Button Content="Send to Selected Queue..." Command="{Binding SendQueueMessageCommand}" />
-                        </StackPanel>
+                    <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" Margin="0,8,0,0" />
+                </Grid>
 
-                        <Grid Grid.Row="3">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="180" />
-                                <ColumnDefinition Width="180" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                <Grid DataContext="{Binding KeyVault}" Visibility="{Binding DataContext.IsKeyVaultSelected, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}" Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                            <DockPanel Grid.Column="0" Margin="0,0,10,0">
-                                <TextBlock DockPanel.Dock="Top" Text="Queues" Style="{StaticResource SectionHeader}" />
-                                <ListView ItemsSource="{Binding Queues}" SelectedItem="{Binding SelectedQueue, Mode=TwoWay}">
-                                    <ListView.View>
-                                        <GridView>
-                                            <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="140" />
-                                            <GridViewColumn Header="Active" DisplayMemberBinding="{Binding ActiveMessageCount}" Width="60" />
-                                            <GridViewColumn Header="DLQ" DisplayMemberBinding="{Binding DeadLetterMessageCount}" Width="50" />
-                                        </GridView>
-                                    </ListView.View>
-                                </ListView>
-                            </DockPanel>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Key vault:" Style="{StaticResource InlineFieldLabel}" />
+                        <TextBox Text="{Binding VaultName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                        <Button Content="Load Secrets" Command="{Binding LoadSecretsCommand}" />
+                    </StackPanel>
 
-                            <DockPanel Grid.Column="1" Margin="0,0,10,0">
-                                <TextBlock DockPanel.Dock="Top" Text="Topics" Style="{StaticResource SectionHeader}" />
-                                <ListBox ItemsSource="{Binding Topics}"
-                                         SelectedItem="{Binding SelectedTopic, Mode=TwoWay}"
-                                         DisplayMemberPath="Name" />
-                            </DockPanel>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="280" MinWidth="180" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" MinWidth="280" />
+                        </Grid.ColumnDefinitions>
 
-                            <DockPanel Grid.Column="2">
-                                <TextBlock DockPanel.Dock="Top" Text="Subscriptions (of selected topic)" Style="{StaticResource SectionHeader}" />
-                                <ListView ItemsSource="{Binding Subscriptions}" SelectedItem="{Binding SelectedSubscription, Mode=TwoWay}">
-                                    <ListView.View>
-                                        <GridView>
-                                            <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="220" />
-                                            <GridViewColumn Header="Active" DisplayMemberBinding="{Binding ActiveMessageCount}" Width="80" />
-                                            <GridViewColumn Header="Dead-letter" DisplayMemberBinding="{Binding DeadLetterMessageCount}" Width="90" />
-                                            <GridViewColumn Header="Total" DisplayMemberBinding="{Binding TotalMessageCount}" Width="80" />
-                                        </GridView>
-                                    </ListView.View>
-                                </ListView>
-                            </DockPanel>
-                        </Grid>
-
-                        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,12,0,8">
-                            <Button Content="Refresh Queue Messages" Command="{Binding PeekQueueMessagesCommand}" />
-                            <Button Content="Refresh Subscription Messages" Command="{Binding PeekMessagesCommand}" />
-                        </StackPanel>
-
-                        <DockPanel Grid.Row="5">
-                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}">
-                                <Run Text="Peeked Messages (non-destructive) — double-click a row for full details" />
-                                <Run Text=" — " />
-                                <Run Text="{Binding PeekedMessagesSource}" FontWeight="Normal" />
-                            </TextBlock>
-                            <ListView x:Name="PeekedMessagesListView" ItemsSource="{Binding PeekedMessages}"
-                                      MouseDoubleClick="PeekedMessagesListView_MouseDoubleClick">
+                        <DockPanel Grid.Column="0" Margin="0,0,6,0">
+                            <TextBlock DockPanel.Dock="Top" Text="Secrets" Style="{StaticResource SectionHeader}" />
+                            <ListView ItemsSource="{Binding Secrets}" SelectedItem="{Binding SelectedSecret, Mode=TwoWay}">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Header="Seq #" DisplayMemberBinding="{Binding SequenceNumber}" Width="70" />
-                                        <GridViewColumn Header="Message ID" DisplayMemberBinding="{Binding MessageId}" Width="200" />
-                                        <GridViewColumn Header="Subject" DisplayMemberBinding="{Binding Subject}" Width="150" />
-                                        <GridViewColumn Header="Enqueued" DisplayMemberBinding="{Binding EnqueuedTime}" Width="160" />
-                                        <GridViewColumn Header="Body" DisplayMemberBinding="{Binding Body}" Width="260" />
+                                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="160" />
+                                        <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Enabled}" Width="60" />
+                                        <GridViewColumn Header="Updated" DisplayMemberBinding="{Binding UpdatedOn}" Width="150" />
                                     </GridView>
                                 </ListView.View>
                             </ListView>
                         </DockPanel>
 
-                        <TextBlock Grid.Row="6" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" Margin="0,8,0,0" />
-                    </Grid>
-                    </TabItem>
+                        <GridSplitter Grid.Column="1" Style="{StaticResource PanelSplitter}" />
 
-                    <TabItem Header="All Messages">
-                        <Grid Margin="16">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                                <Button Content="Scan All Accessible Messages" Command="{Binding ScanAllMessagesCommand}" />
+                        <DockPanel Grid.Column="2" Margin="6,0,0,0">
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionHeader}">
+                                <Run Text="Versions" />
+                                <Run Text=" — " />
+                                <Run Text="{Binding SelectedSecret.Name}" FontWeight="Normal" />
+                            </TextBlock>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding RefreshSecretVersionsCommand}" />
+                                <Button Content="View Value..." Command="{Binding ViewSecretValueCommand}" />
                             </StackPanel>
-
-                            <TextBlock Grid.Row="1" Text="{Binding AllMessagesStatus}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" Margin="0,0,0,10" />
-
-                            <ListView Grid.Row="2" x:Name="AllMessagesListView" ItemsSource="{Binding AllMessages}"
-                                      MouseDoubleClick="AllMessagesListView_MouseDoubleClick">
+                            <ListView ItemsSource="{Binding SecretVersions}" SelectedItem="{Binding SelectedVersion, Mode=TwoWay}">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceDescription}" Width="260" />
-                                        <GridViewColumn Header="Seq #" DisplayMemberBinding="{Binding SequenceNumber}" Width="60" />
-                                        <GridViewColumn Header="Message ID" DisplayMemberBinding="{Binding MessageId}" Width="180" />
-                                        <GridViewColumn Header="Subject" DisplayMemberBinding="{Binding Subject}" Width="120" />
-                                        <GridViewColumn Header="Enqueued" DisplayMemberBinding="{Binding EnqueuedTime}" Width="150" />
-                                        <GridViewColumn Header="Body" DisplayMemberBinding="{Binding Body}" Width="220" />
+                                        <GridViewColumn Header="Version" DisplayMemberBinding="{Binding Version}" Width="260" />
+                                        <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Enabled}" Width="70" />
+                                        <GridViewColumn Header="Activation" DisplayMemberBinding="{Binding ActivatesOn}" Width="150" />
+                                        <GridViewColumn Header="Expiration" DisplayMemberBinding="{Binding ExpiresOn}" Width="150" />
+                                        <GridViewColumn Header="Created" DisplayMemberBinding="{Binding CreatedOn}" Width="150" />
                                     </GridView>
                                 </ListView.View>
                             </ListView>
-                        </Grid>
-                    </TabItem>
-                    </TabControl>
+                        </DockPanel>
+                    </Grid>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" VerticalAlignment="Center" />
+                        <Button Content="Copy error details" Style="{StaticResource SecondaryButton}" Command="{Binding CopyErrorDetailsCommand}"
+                                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}" Margin="10,0,0,0" />
+                    </StackPanel>
                 </Grid>
             </Grid>
         </Grid>
 
         <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,0" Padding="12,6">
-            <TextBlock>
-                <Run Text="Connected: " />
-                <Run Text="{Binding ConnectedConnectionName, FallbackValue='(none)', TargetNullValue='(none)'}" FontWeight="SemiBold" />
-            </TextBlock>
+            <StackPanel Orientation="Horizontal">
+                <Ellipse Width="10" Height="10" Style="{StaticResource ConnectionStatusDot}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBlock Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisibility}}">
+                    <Run Text="Connected: " />
+                    <Run Text="{Binding ConnectedConnectionName}" FontWeight="SemiBold" />
+                </TextBlock>
+                <TextBlock Text="Disconnected" Visibility="{Binding IsDisconnected, Converter={StaticResource BoolToVisibility}}" />
+            </StackPanel>
         </Border>
     </Grid>
 </Window>

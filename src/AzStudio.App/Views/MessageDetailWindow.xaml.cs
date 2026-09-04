@@ -75,15 +75,4 @@ public partial class MessageDetailWindow : Window
             message.ApplicationProperties);
         window.ShowDialog();
     }
-
-    public static void Show(Window? owner, AggregatedMessageInfo message)
-    {
-        var window = new MessageDetailWindow { Owner = owner };
-        window.Populate(
-            message.SourceDescription, message.SequenceNumber, message.MessageId, message.Subject,
-            message.Body, message.EnqueuedTime, message.ContentType, message.CorrelationId, message.SessionId,
-            message.PartitionKey, message.DeliveryCount, message.ExpiresAt, message.TimeToLive,
-            message.ApplicationProperties);
-        window.ShowDialog();
-    }
 }

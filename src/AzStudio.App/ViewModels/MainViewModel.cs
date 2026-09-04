@@ -17,6 +17,8 @@ public partial class MainViewModel : ObservableObject
 
     public ServiceBusTabViewModel ServiceBus { get; } = new();
 
+    public KeyVaultTabViewModel KeyVault { get; } = new();
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ConnectCommand))]
     [NotifyCanExecuteChangedFor(nameof(DisconnectCommand))]
@@ -24,7 +26,10 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DisconnectCommand))]
+    [NotifyPropertyChangedFor(nameof(IsDisconnected))]
     private bool isConnected;
+
+    public bool IsDisconnected => !IsConnected;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ConnectCommand))]
@@ -42,6 +47,9 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool isServiceBusSelected;
+
+    [ObservableProperty]
+    private bool isKeyVaultSelected;
 
     public MainViewModel()
     {
@@ -96,6 +104,7 @@ public partial class MainViewModel : ObservableObject
             // name can always be typed (or changed) directly on each tab.
             BlobStorage.Activate(credential, profile.StorageAccountName);
             ServiceBus.Activate(credential, profile.ServiceBusNamespace);
+            KeyVault.Activate(credential, profile.KeyVaultName);
 
             IsConnected = true;
             ConnectedConnectionName = profile.Name;
@@ -105,17 +114,13 @@ public partial class MainViewModel : ObservableObject
             {
                 _ = BlobStorage.LoadContainersCommand.ExecuteAsync(null);
             }
-
-            if (!string.IsNullOrWhiteSpace(profile.ServiceBusNamespace))
-            {
-                _ = ServiceBus.LoadTopicsAndQueuesCommand.ExecuteAsync(null);
-            }
         }
         catch (Exception ex)
         {
             IsConnected = false;
             BlobStorage.Deactivate();
             ServiceBus.Deactivate();
+            KeyVault.Deactivate();
             StatusMessage = $"Connection failed: {ex.Message}";
         }
         finally
@@ -131,6 +136,7 @@ public partial class MainViewModel : ObservableObject
     {
         BlobStorage.Deactivate();
         ServiceBus.Deactivate();
+        KeyVault.Deactivate();
         IsConnected = false;
         ConnectedConnectionName = null;
         StatusMessage = "Disconnected.";

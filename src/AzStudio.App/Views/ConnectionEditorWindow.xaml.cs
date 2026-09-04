@@ -23,6 +23,7 @@ public partial class ConnectionEditorWindow : Window
         ClientIdBox.Text = _editing.ClientId;
         StorageAccountBox.Text = _editing.StorageAccountName;
         ServiceBusNamespaceBox.Text = _editing.ServiceBusNamespace;
+        KeyVaultNameBox.Text = _editing.KeyVaultName;
 
         if (_editing.AuthType == AuthType.ServicePrincipal)
         {
@@ -50,7 +51,8 @@ public partial class ConnectionEditorWindow : Window
 
         var isServicePrincipal = ServicePrincipalRadio.IsChecked == true;
         SecretPanel.Visibility = isServicePrincipal ? Visibility.Visible : Visibility.Collapsed;
-        ClientIdLabel.Text = isServicePrincipal ? "Client (App) ID" : "Client (App) ID (optional)";
+        ClientIdLabel.Visibility = isServicePrincipal ? Visibility.Visible : Visibility.Collapsed;
+        ClientIdBox.Visibility = isServicePrincipal ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -102,6 +104,7 @@ public partial class ConnectionEditorWindow : Window
 
         var storageAccount = StorageAccountBox.Text.Trim();
         var serviceBusNamespace = ServiceBusNamespaceBox.Text.Trim();
+        var keyVaultName = KeyVaultNameBox.Text.Trim();
 
         Result = new ConnectionProfile
         {
@@ -112,7 +115,8 @@ public partial class ConnectionEditorWindow : Window
             ClientId = clientId,
             ProtectedClientSecret = protectedSecret,
             StorageAccountName = storageAccount,
-            ServiceBusNamespace = serviceBusNamespace
+            ServiceBusNamespace = serviceBusNamespace,
+            KeyVaultName = keyVaultName
         };
 
         DialogResult = true;

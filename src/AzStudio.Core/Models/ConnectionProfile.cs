@@ -34,4 +34,7 @@ public class ConnectionProfile
 
     /// <summary>Default Service Bus namespace for the Service Bus module, e.g. "my-namespace" (no suffix).</summary>
     public string ServiceBusNamespace { get; set; } = string.Empty;
+
+    /// <summary>Default key vault name for the Key Vault module, e.g. "my-vault" (no suffix).</summary>
+    public string KeyVaultName { get; set; } = string.Empty;
 }

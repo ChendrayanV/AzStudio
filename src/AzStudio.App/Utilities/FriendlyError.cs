@@ -32,6 +32,13 @@ public static class FriendlyError
                        "storage account.";
             }
 
+            if (rfe.ErrorCode == "Forbidden" && rfe.Status == 403)
+            {
+                return $"Access denied to '{resourceLabel}'. The same trap as Storage applies here — management-plane " +
+                       "roles like 'Owner' or 'Contributor' don't grant this. Ask an admin for the 'Key Vault Secrets " +
+                       "User' role (or a Get/List access-policy entry) on this vault specifically.";
+            }
+
             return rfe.Status switch
             {
                 401 or 403 => $"Access denied to '{resourceLabel}'. Ask an admin to grant you permission.",

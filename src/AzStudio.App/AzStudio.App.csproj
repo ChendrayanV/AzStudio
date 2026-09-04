@@ -8,6 +8,12 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Assets\Fonts\*.ttf" />
+    <Resource Include="Assets\Icons\*.ico" />
+    <Resource Include="Assets\Icons\*.png" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -16,7 +22,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>AzStudio</AssemblyName>
     <RootNamespace>AzStudio.App</RootNamespace>
-    <ApplicationIcon />
+    <ApplicationIcon>Assets\Icons\app.ico</ApplicationIcon>
     <Platforms>AnyCPU;x64</Platforms>
     <SelfContained>false</SelfContained>
   </PropertyGroup>

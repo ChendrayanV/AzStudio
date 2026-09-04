@@ -66,14 +66,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AllMessagesListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        if (AllMessagesListView.SelectedItem is AggregatedMessageInfo message)
-        {
-            MessageDetailWindow.Show(this, message);
-        }
-    }
-
     private void StorageNav_Checked(object sender, RoutedEventArgs e)
     {
         // XAML sets StorageNavRadio's IsChecked="True" as its initial state, which fires this
@@ -82,6 +74,7 @@ public partial class MainWindow : Window
         if (DataContext is not MainViewModel vm) return;
         vm.IsStorageSelected = true;
         vm.IsServiceBusSelected = false;
+        vm.IsKeyVaultSelected = false;
     }
 
     private void ServiceBusNav_Checked(object sender, RoutedEventArgs e)
@@ -89,5 +82,14 @@ public partial class MainWindow : Window
         if (DataContext is not MainViewModel vm) return;
         vm.IsServiceBusSelected = true;
         vm.IsStorageSelected = false;
+        vm.IsKeyVaultSelected = false;
+    }
+
+    private void KeyVaultNav_Checked(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        vm.IsKeyVaultSelected = true;
+        vm.IsStorageSelected = false;
+        vm.IsServiceBusSelected = false;
     }
 }

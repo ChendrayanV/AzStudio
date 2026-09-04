@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Connection" Height="560" Width="460"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize" ShowInTaskbar="False">
+        ResizeMode="NoResize" ShowInTaskbar="False"
+        FontFamily="{StaticResource AppFontFamily}">
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -41,6 +42,9 @@
 
                 <TextBlock Text="Default Service Bus namespace (optional — can also be typed on the Service Bus tab), e.g. my-namespace" Style="{StaticResource FieldLabel}" />
                 <TextBox x:Name="ServiceBusNamespaceBox" />
+
+                <TextBlock Text="Default Key Vault name (optional — can also be typed on the Key Vault tab), e.g. my-vault" Style="{StaticResource FieldLabel}" />
+                <TextBox x:Name="KeyVaultNameBox" />
 
                 <TextBlock x:Name="ErrorText" Foreground="#C0392B" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
             </StackPanel>
