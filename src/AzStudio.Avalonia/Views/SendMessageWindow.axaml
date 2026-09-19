@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AzStudio.Avalonia.Views.SendMessageWindow"
+        Title="Send Message" Height="380" Width="480"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False" ShowInTaskbar="False"
+        FontFamily="{StaticResource AppFontFamily}"
+        Background="White">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Subject (optional)" Classes="field-label" Margin="0,0,0,2" />
+        <TextBox Name="SubjectBox" Grid.Row="1" />
+
+        <TextBlock Grid.Row="2" Text="Message body" Classes="field-label" />
+        <TextBox Name="BodyBox" Grid.Row="3"
+                 AcceptsReturn="True" TextWrapping="Wrap" />
+
+        <TextBlock Name="ErrorText" Grid.Row="4" Foreground="#C0392B" TextWrapping="Wrap" Margin="0,8,0,0" IsVisible="False" />
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Classes="secondary" Click="Cancel_Click" IsCancel="True" />
+            <Button Content="Send" Click="Send_Click" IsDefault="True" Margin="0" />
+        </StackPanel>
+    </Grid>
+</Window>

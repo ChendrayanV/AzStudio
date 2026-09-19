@@ -1,0 +1,41 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AzStudio.Avalonia.Views.MessageDetailWindow"
+        Title="Message Details" Height="600" Width="640"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="{StaticResource AppFontFamily}"
+        Background="White">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" MaxHeight="260">
+            <Grid Name="PropertiesGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+            </Grid>
+        </ScrollViewer>
+
+        <DockPanel Grid.Row="1" Margin="0,14,0,10">
+            <TextBlock DockPanel.Dock="Top" Text="Application Properties" Classes="section-header" />
+            <TextBox Name="PropertiesBox" Height="80" IsReadOnly="True" TextWrapping="Wrap"
+                     AcceptsReturn="True" Background="#F7F7F7" />
+        </DockPanel>
+
+        <DockPanel Grid.Row="2">
+            <TextBlock DockPanel.Dock="Top" Text="Body" Classes="section-header" />
+            <TextBox Name="BodyBox" IsReadOnly="True" TextWrapping="Wrap"
+                     AcceptsReturn="True" FontFamily="Consolas" Background="#F7F7F7" />
+        </DockPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Close" Click="Close_Click" IsDefault="True" IsCancel="True" Margin="0" />
+        </StackPanel>
+    </Grid>
+</Window>

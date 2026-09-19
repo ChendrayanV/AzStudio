@@ -1,20 +1,23 @@
-using System.Windows;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
 using AzStudio.Core.Models;
 
-namespace AzStudio.App.Views;
+namespace AzStudio.Avalonia.Views;
 
 public partial class ConnectionEditorWindow : Window
 {
     private readonly ConnectionProfile _editing;
-    private readonly bool _isNew;
 
     public ConnectionProfile? Result { get; private set; }
 
-    public ConnectionEditorWindow(ConnectionProfile? existing)
+    public ConnectionEditorWindow()
     {
         InitializeComponent();
+        _editing = new ConnectionProfile();
+    }
 
-        _isNew = existing is null;
+    private ConnectionEditorWindow(ConnectionProfile? existing) : this()
+    {
         _editing = existing ?? new ConnectionProfile();
 
         NameBox.Text = _editing.Name;
@@ -34,27 +37,27 @@ public partial class ConnectionEditorWindow : Window
             InteractiveRadio.IsChecked = true;
         }
 
-        Title = _isNew ? "New Connection" : "Edit Connection";
+        Title = existing is null ? "New Connection" : "Edit Connection";
         UpdateAuthTypeUi();
     }
 
-    private void AuthType_Checked(object sender, RoutedEventArgs e) => UpdateAuthTypeUi();
+    private void AuthType_Checked(object? sender, RoutedEventArgs e) => UpdateAuthTypeUi();
 
     private void UpdateAuthTypeUi()
     {
         if (SecretNoticeText is null) return;
 
         var isServicePrincipal = ServicePrincipalRadio.IsChecked == true;
-        SecretNoticeText.Visibility = isServicePrincipal ? Visibility.Visible : Visibility.Collapsed;
-        ClientIdLabel.Visibility = isServicePrincipal ? Visibility.Visible : Visibility.Collapsed;
-        ClientIdBox.Visibility = isServicePrincipal ? Visibility.Visible : Visibility.Collapsed;
+        SecretNoticeText.IsVisible = isServicePrincipal;
+        ClientIdLabel.IsVisible = isServicePrincipal;
+        ClientIdBox.IsVisible = isServicePrincipal;
     }
 
-    private void Save_Click(object sender, RoutedEventArgs e)
+    private void Save_Click(object? sender, RoutedEventArgs e)
     {
-        ErrorText.Visibility = Visibility.Collapsed;
+        ErrorText.IsVisible = false;
 
-        var name = NameBox.Text.Trim();
+        var name = NameBox.Text?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(name))
         {
             ShowError("Connection name is required.");
@@ -62,8 +65,8 @@ public partial class ConnectionEditorWindow : Window
         }
 
         var authType = ServicePrincipalRadio.IsChecked == true ? AuthType.ServicePrincipal : AuthType.InteractiveUser;
-        var tenantId = TenantIdBox.Text.Trim();
-        var clientId = ClientIdBox.Text.Trim();
+        var tenantId = TenantIdBox.Text?.Trim() ?? string.Empty;
+        var clientId = ClientIdBox.Text?.Trim() ?? string.Empty;
 
         if (authType == AuthType.ServicePrincipal)
         {
@@ -80,11 +83,6 @@ public partial class ConnectionEditorWindow : Window
             }
         }
 
-        var storageAccount = StorageAccountBox.Text.Trim();
-        var serviceBusNamespace = ServiceBusNamespaceBox.Text.Trim();
-        var keyVaultName = KeyVaultNameBox.Text.Trim();
-        var logAnalyticsWorkspaceId = LogAnalyticsWorkspaceIdBox.Text.Trim();
-
         Result = new ConnectionProfile
         {
             Id = _editing.Id,
@@ -92,29 +90,28 @@ public partial class ConnectionEditorWindow : Window
             AuthType = authType,
             TenantId = tenantId,
             ClientId = clientId,
-            StorageAccountName = storageAccount,
-            ServiceBusNamespace = serviceBusNamespace,
-            KeyVaultName = keyVaultName,
-            LogAnalyticsWorkspaceId = logAnalyticsWorkspaceId
+            StorageAccountName = StorageAccountBox.Text?.Trim() ?? string.Empty,
+            ServiceBusNamespace = ServiceBusNamespaceBox.Text?.Trim() ?? string.Empty,
+            KeyVaultName = KeyVaultNameBox.Text?.Trim() ?? string.Empty,
+            LogAnalyticsWorkspaceId = LogAnalyticsWorkspaceIdBox.Text?.Trim() ?? string.Empty
         };
 
-        DialogResult = true;
+        Close(true);
     }
 
     private void ShowError(string message)
     {
         ErrorText.Text = message;
-        ErrorText.Visibility = Visibility.Visible;
+        ErrorText.IsVisible = true;
     }
 
-    private void Cancel_Click(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-    }
+    private void Cancel_Click(object? sender, RoutedEventArgs e) => Close(false);
 
-    public static ConnectionProfile? Edit(Window? owner, ConnectionProfile? existing)
+    public static async Task<ConnectionProfile?> EditAsync(Window? owner, ConnectionProfile? existing)
     {
-        var window = new ConnectionEditorWindow(existing) { Owner = owner };
-        return window.ShowDialog() == true ? window.Result : null;
+        var window = new ConnectionEditorWindow(existing);
+        if (owner is null) return null;
+        var saved = await window.ShowDialog<bool>(owner);
+        return saved ? window.Result : null;
     }
 }

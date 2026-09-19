@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AzStudio.Avalonia.Views.TextInputWindow"
+        Title="AzStudio" Height="160" Width="420"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False" ShowInTaskbar="False"
+        FontFamily="{StaticResource AppFontFamily}"
+        Background="White">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Name="PromptText" Grid.Row="0" TextWrapping="Wrap" Text="Enter a value:" />
+        <TextBox Name="ValueBox" Grid.Row="1" Margin="0,10,0,0" />
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Classes="secondary" Click="Cancel_Click" IsCancel="True" />
+            <Button Content="OK" Click="Ok_Click" IsDefault="True" Margin="0" />
+        </StackPanel>
+    </Grid>
+</Window>

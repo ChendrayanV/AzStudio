@@ -42,13 +42,58 @@ jobs:
       - name: Build solution
         run: dotnet build AzStudio.sln -c Release
 
-      - name: Publish self-contained executable
+      - name: Publish AzStudio.App (WPF, win-x64)
         run: >
           dotnet publish src/AzStudio.App/AzStudio.App.csproj -c Release -r win-x64
           --self-contained true
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
-          -o dist
+          -o dist/app-win-x64
+
+      # AzStudio.Avalonia is plain net8.0 (no -windows suffix), so every RID below
+      # cross-publishes cleanly from this windows-latest runner — no target OS/hardware
+      # needed at build time.
+      - name: Publish AzStudio.Avalonia (win-x64)
+        run: >
+          dotnet publish src/AzStudio.Avalonia/AzStudio.Avalonia.csproj -c Release -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o dist/avalonia-win-x64
+
+      - name: Publish AzStudio.Avalonia (linux-x64)
+        run: >
+          dotnet publish src/AzStudio.Avalonia/AzStudio.Avalonia.csproj -c Release -r linux-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o dist/avalonia-linux-x64
+
+      - name: Publish AzStudio.Avalonia (osx-x64)
+        run: >
+          dotnet publish src/AzStudio.Avalonia/AzStudio.Avalonia.csproj -c Release -r osx-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o dist/avalonia-osx-x64
+
+      - name: Publish AzStudio.Avalonia (osx-arm64)
+        run: >
+          dotnet publish src/AzStudio.Avalonia/AzStudio.Avalonia.csproj -c Release -r osx-arm64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o dist/avalonia-osx-arm64
+
+      - name: Stage release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/assets | Out-Null
+          Copy-Item dist/app-win-x64/AzStudio.exe dist/assets/AzStudio-Windows.exe
+          Copy-Item dist/avalonia-win-x64/AzStudio.Avalonia.exe dist/assets/AzStudio-Windows-Avalonia.exe
+          Compress-Archive -Path dist/avalonia-linux-x64/AzStudio.Avalonia -DestinationPath dist/assets/AzStudio-Linux-x64.zip
+          Compress-Archive -Path dist/avalonia-osx-x64/AzStudio.Avalonia -DestinationPath dist/assets/AzStudio-macOS-x64.zip
+          Compress-Archive -Path dist/avalonia-osx-arm64/AzStudio.Avalonia -DestinationPath dist/assets/AzStudio-macOS-arm64.zip
 
       - name: Tag and create GitHub Release
         env:
@@ -58,6 +103,6 @@ jobs:
           $version = "${{ steps.version.outputs.version }}"
           git tag $version
           git push origin $version
-          gh release create $version dist/AzStudio.exe `
+          gh release create $version (Get-ChildItem dist/assets -File | ForEach-Object { $_.FullName }) `
             --title "AzStudio $version" `
-            --notes "Automated release built from commit ${{ github.sha }}."
+            --notes "Automated release built from commit ${{ github.sha }}.`n`nAssets: Windows (WPF), and Avalonia builds for Windows, Linux, and macOS (Intel + Apple Silicon)."

@@ -1,0 +1,362 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AzStudio.Avalonia.MainWindow"
+        Title="AzStudio" Height="700" Width="1150" MinHeight="500" MinWidth="850"
+        WindowState="Maximized"
+        Icon="avares://AzStudio.Avalonia/Assets/Icons/app.png"
+        FontFamily="{StaticResource AppFontFamily}"
+        Background="White">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Connections panel -->
+            <DockPanel Grid.Column="0" Background="{StaticResource PanelBackgroundBrush}" Margin="0">
+                <TextBlock DockPanel.Dock="Top" Text="Connections" Classes="section-header" Margin="12,12,12,6" />
+
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12,0,12,8">
+                    <Button Content="New" Click="NewConnection_Click" />
+                    <Button Content="Edit" Click="EditConnection_Click" />
+                    <Button Content="Delete" Classes="secondary" Click="DeleteConnection_Click" />
+                </StackPanel>
+
+                <ListBox DockPanel.Dock="Top" Name="ConnectionsList"
+                         ItemsSource="{Binding Connections}"
+                         SelectedItem="{Binding SelectedConnection, Mode=TwoWay}"
+                         Margin="12,0,12,8" MinHeight="110" MaxHeight="170">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel DockPanel.Dock="Top" Margin="12,0,12,20">
+                    <Button Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,0,6" />
+                    <Button Content="Disconnect" Classes="secondary" Command="{Binding DisconnectCommand}" Margin="0" />
+                </StackPanel>
+
+                <TextBlock DockPanel.Dock="Top" Text="Azure Services" Classes="section-header" Margin="12,0,12,6" />
+                <!-- Deliberately NOT IsEnabled={Binding IsConnected} (unlike the WPF version): Avalonia's
+                     disabled-state rendering pipeline bypasses every style-level Foreground/Opacity
+                     override tried here, leaving text an unreadable, un-styleable pastel color with no
+                     reliable fix. Nav items are harmless to click while disconnected (the panel behind
+                     them just shows its empty pre-connect state); the buttons that actually perform
+                     Azure calls are still correctly gated by their own CanExecute (_credential is not
+                     null), so no real protection is lost. -->
+                <StackPanel DockPanel.Dock="Top" Margin="8,0,8,20">
+                    <RadioButton Name="StorageNavRadio" GroupName="ServiceNav" Classes="nav-item" IsChecked="True" IsCheckedChanged="StorageNav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="avares://AzStudio.Avalonia/Assets/Icons/storage.png" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="Storage" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Name="ServiceBusNavRadio" GroupName="ServiceNav" Classes="nav-item" IsCheckedChanged="ServiceBusNav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="avares://AzStudio.Avalonia/Assets/Icons/service-bus.png" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="Service Bus" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Name="KeyVaultNavRadio" GroupName="ServiceNav" Classes="nav-item" IsCheckedChanged="KeyVaultNav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="avares://AzStudio.Avalonia/Assets/Icons/key-vault.png" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="Key Vault" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Name="LogAnalyticsNavRadio" GroupName="ServiceNav" Classes="nav-item" IsCheckedChanged="LogAnalyticsNav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="avares://AzStudio.Avalonia/Assets/Icons/log-analytics.png" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="Log Analytics" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                </StackPanel>
+
+                <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,0" Padding="12" Margin="0,20,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Status" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" FontSize="12" Foreground="#3B3F45" />
+                    </StackPanel>
+                </Border>
+
+                <Grid />
+            </DockPanel>
+
+            <!-- Service panels. Same reasoning as the nav StackPanel above: no IsEnabled binding here —
+                 every button inside still correctly gates on its own CanExecute, so nothing becomes
+                 truly usable before Connect; this just stops labels/headers from being swallowed into
+                 Avalonia's unreadable disabled-text rendering. -->
+            <Grid Grid.Column="1" Margin="0">
+                <Grid DataContext="{Binding BlobStorage}"
+                      IsVisible="{Binding DataContext.IsStorageSelected, RelativeSource={RelativeSource AncestorType=Window}}"
+                      Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Storage account:" Classes="inline-field-label" />
+                        <TextBox Text="{Binding StorageAccountName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                        <Button Content="Load Containers" Command="{Binding LoadContainersCommand}" />
+                        <Button Content="New Container" Command="{Binding CreateContainerCommand}" />
+                        <Button Content="Delete Container" Classes="secondary" Command="{Binding DeleteContainerCommand}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240" MinWidth="150" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" MinWidth="240" />
+                        </Grid.ColumnDefinitions>
+
+                        <DockPanel Grid.Column="0" Margin="0,0,6,0">
+                            <TextBlock DockPanel.Dock="Top" Text="Containers" Classes="section-header" />
+                            <ListBox ItemsSource="{Binding Containers}" SelectedItem="{Binding SelectedContainer, Mode=TwoWay}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
+
+                        <GridSplitter Grid.Column="1" Classes="panel-splitter" />
+
+                        <DockPanel Grid.Column="2" Margin="6,0,0,0">
+                            <TextBlock DockPanel.Dock="Top" Text="Blobs" Classes="section-header" />
+                            <!-- WPF used ListView+GridView here; Avalonia has no equivalent pair, so
+                                 this is a DataGrid instead — the one concrete "same look, different
+                                 control" swap the spike set out to measure. -->
+                            <DataGrid ItemsSource="{Binding Blobs}" SelectedItem="{Binding SelectedBlob, Mode=TwoWay}" AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="360" />
+                                    <DataGridTextColumn Header="Size (bytes)" Binding="{Binding SizeBytes}" Width="120" />
+                                    <DataGridTextColumn Header="Last Modified" Binding="{Binding LastModified}" Width="180" />
+                                    <DataGridTextColumn Header="Content Type" Binding="{Binding ContentType}" Width="160" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Grid>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,8">
+                        <Button Content="Upload File..." Command="{Binding UploadCommand}" />
+                        <Button Content="Download..." Command="{Binding DownloadCommand}" />
+                        <Button Content="Delete Blob" Classes="secondary" Command="{Binding DeleteBlobCommand}" />
+                        <Button Content="Refresh Blobs" Classes="secondary" Command="{Binding LoadBlobsCommand}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal">
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" VerticalAlignment="Center" />
+                        <Button Content="Copy error details" Classes="secondary" Command="{Binding CopyErrorDetailsCommand}"
+                                IsVisible="{Binding HasError}" Margin="10,0,0,0" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid DataContext="{Binding ServiceBus}"
+                      IsVisible="{Binding DataContext.IsServiceBusSelected, RelativeSource={RelativeSource AncestorType=Window}}"
+                      Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                        <TextBlock Text="Namespace:" Classes="inline-field-label" />
+                        <TextBox Text="{Binding NamespaceName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,20,0" />
+                        <CheckBox Content="View dead-letter messages" IsChecked="{Binding ViewDeadLetter}" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="Queue" Classes="section-header" />
+                                <TextBox Text="{Binding DirectQueueName}" Margin="0,0,0,10" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Peek" Command="{Binding PeekDirectQueueCommand}" />
+                                    <Button Content="Refresh" Classes="secondary" Command="{Binding RefreshDirectQueueMessagesCommand}" />
+                                    <Button Content="Send..." Command="{Binding SendDirectQueueMessageCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="Topic &amp; Subscription" Classes="section-header" />
+                                <TextBlock Text="Topic" Classes="field-label" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding DirectTopicName}" Margin="0,0,0,8" />
+                                <TextBlock Text="Subscription (for Peek — Send targets the topic itself)" Classes="field-label" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding DirectSubscriptionName}" Margin="0,0,0,10" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Peek" Command="{Binding PeekDirectSubscriptionCommand}" />
+                                    <Button Content="Refresh" Classes="secondary" Command="{Binding RefreshDirectSubscriptionMessagesCommand}" />
+                                    <Button Content="Send..." Command="{Binding SendDirectTopicMessageCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <DockPanel Grid.Row="2">
+                        <TextBlock DockPanel.Dock="Top" Classes="section-header">
+                            <Run Text="Peeked Messages (non-destructive) — double-click a row for full details" />
+                            <Run Text=" — " />
+                            <Run Text="{Binding PeekedMessagesSource}" FontWeight="Normal" />
+                        </TextBlock>
+                        <DataGrid Name="PeekedMessagesGrid" ItemsSource="{Binding PeekedMessages}" AutoGenerateColumns="False"
+                                  DoubleTapped="PeekedMessagesGrid_DoubleTapped">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Seq #" Binding="{Binding SequenceNumber}" Width="70" />
+                                <DataGridTextColumn Header="Message ID" Binding="{Binding MessageId}" Width="200" />
+                                <DataGridTextColumn Header="Subject" Binding="{Binding Subject}" Width="150" />
+                                <DataGridTextColumn Header="Enqueued" Binding="{Binding EnqueuedTime}" Width="160" />
+                                <DataGridTextColumn Header="Body" Binding="{Binding Body}" Width="400" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+
+                    <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" Margin="0,8,0,0" />
+                </Grid>
+
+                <Grid DataContext="{Binding KeyVault}"
+                      IsVisible="{Binding DataContext.IsKeyVaultSelected, RelativeSource={RelativeSource AncestorType=Window}}"
+                      Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Key vault:" Classes="inline-field-label" />
+                        <TextBox Text="{Binding VaultName}" Width="220" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                        <Button Content="Load Secrets" Command="{Binding LoadSecretsCommand}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="280" MinWidth="180" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" MinWidth="280" />
+                        </Grid.ColumnDefinitions>
+
+                        <DockPanel Grid.Column="0" Margin="0,0,6,0">
+                            <TextBlock DockPanel.Dock="Top" Text="Secrets" Classes="section-header" />
+                            <DataGrid ItemsSource="{Binding Secrets}" SelectedItem="{Binding SelectedSecret, Mode=TwoWay}" AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="160" />
+                                    <DataGridTextColumn Header="Status" Binding="{Binding Enabled}" Width="60" />
+                                    <DataGridTextColumn Header="Updated" Binding="{Binding UpdatedOn}" Width="150" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+
+                        <GridSplitter Grid.Column="1" Classes="panel-splitter" />
+
+                        <DockPanel Grid.Column="2" Margin="6,0,0,0">
+                            <TextBlock DockPanel.Dock="Top" Classes="section-header">
+                                <Run Text="Versions" />
+                                <Run Text=" — " />
+                                <Run Text="{Binding SelectedSecret.Name}" FontWeight="Normal" />
+                            </TextBlock>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="Refresh" Classes="secondary" Command="{Binding RefreshSecretVersionsCommand}" />
+                                <Button Content="View Value..." Command="{Binding ViewSecretValueCommand}" />
+                            </StackPanel>
+                            <DataGrid ItemsSource="{Binding SecretVersions}" SelectedItem="{Binding SelectedVersion, Mode=TwoWay}" AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="260" />
+                                    <DataGridTextColumn Header="Status" Binding="{Binding Enabled}" Width="70" />
+                                    <DataGridTextColumn Header="Activation" Binding="{Binding ActivatesOn}" Width="150" />
+                                    <DataGridTextColumn Header="Expiration" Binding="{Binding ExpiresOn}" Width="150" />
+                                    <DataGridTextColumn Header="Created" Binding="{Binding CreatedOn}" Width="150" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Grid>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" VerticalAlignment="Center" />
+                        <Button Content="Copy error details" Classes="secondary" Command="{Binding CopyErrorDetailsCommand}"
+                                IsVisible="{Binding HasError}" Margin="10,0,0,0" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid DataContext="{Binding LogAnalytics}"
+                      IsVisible="{Binding DataContext.IsLogAnalyticsSelected, RelativeSource={RelativeSource AncestorType=Window}}"
+                      Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Workspace ID:" Classes="inline-field-label" />
+                        <TextBox Text="{Binding WorkspaceId}" Width="280" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Time range:" Classes="inline-field-label" />
+                        <ComboBox ItemsSource="{Binding TimeRangeOptions}" SelectedItem="{Binding SelectedTimeRange, Mode=TwoWay}"
+                                  Width="150" Margin="0,0,10,0" />
+                        <StackPanel Orientation="Horizontal" IsVisible="{Binding IsCustomRangeSelected}">
+                            <TextBlock Text="From" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <DatePicker SelectedDate="{Binding CustomStart}" Width="150" Margin="0,0,10,0" />
+                            <TextBlock Text="To" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <DatePicker SelectedDate="{Binding CustomEnd}" Width="150" Margin="0,0,10,0" />
+                        </StackPanel>
+                        <Button Content="Run Query" Command="{Binding RunQueryCommand}" />
+                    </StackPanel>
+
+                    <DockPanel Grid.Row="2" Margin="0,0,0,12">
+                        <TextBlock DockPanel.Dock="Top" Text="KQL query" Classes="section-header" />
+                        <TextBox Text="{Binding KqlQuery, Mode=TwoWay}"
+                                 Height="80" AcceptsReturn="True" TextWrapping="NoWrap"
+                                 FontFamily="Consolas" />
+                    </DockPanel>
+
+                    <DockPanel Grid.Row="3">
+                        <TextBlock DockPanel.Dock="Top" Text="Results" Classes="section-header" />
+                        <DataGrid ItemsSource="{Binding Results}" />
+                    </DockPanel>
+
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" VerticalAlignment="Center" />
+                        <Button Content="Copy error details" Classes="secondary" Command="{Binding CopyErrorDetailsCommand}"
+                                IsVisible="{Binding HasError}" Margin="10,0,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,0" Padding="12,6">
+            <StackPanel Orientation="Horizontal">
+                <Ellipse Width="10" Height="10" Classes="connection-dot" Classes.connected="{Binding IsConnected}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBlock IsVisible="{Binding IsConnected}">
+                    <Run Text="Connected: " />
+                    <Run Text="{Binding ConnectedConnectionName}" FontWeight="SemiBold" />
+                </TextBlock>
+                <TextBlock Text="Disconnected" IsVisible="{Binding IsDisconnected}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

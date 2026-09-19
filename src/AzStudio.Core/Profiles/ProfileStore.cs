@@ -5,8 +5,9 @@ namespace AzStudio.Core.Profiles;
 
 /// <summary>
 /// Loads and saves connection profiles to a JSON file under %APPDATA%\AzStudio.
-/// Client secrets are DPAPI-protected before serialization by the caller
-/// (ConnectionProfile.ProtectedClientSecret already holds the protected value).
+/// ConnectionProfile deliberately has no field for a client secret or any other
+/// credential material — only non-secret metadata (name, tenant/client ID, default
+/// target resource names) ever lands in this file.
 /// </summary>
 public class ProfileStore
 {

@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AzStudio.Avalonia.Views.ConnectionEditorWindow"
+        Title="Connection" Height="620" Width="460"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False" ShowInTaskbar="False"
+        FontFamily="{StaticResource AppFontFamily}"
+        Background="White">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0">
+            <StackPanel>
+                <TextBlock Text="Connection name" Classes="field-label" />
+                <TextBox Name="NameBox" />
+
+                <TextBlock Text="Authenticate using" Classes="field-label" />
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Name="ServicePrincipalRadio" Content="Service Principal" GroupName="Auth"
+                                 Margin="0,4,20,4" IsCheckedChanged="AuthType_Checked" />
+                    <RadioButton Name="InteractiveRadio" Content="Sign in as user (Azure AD)" GroupName="Auth"
+                                 Margin="0,4,0,4" IsCheckedChanged="AuthType_Checked" />
+                </StackPanel>
+
+                <TextBlock Text="Tenant ID" Classes="field-label" />
+                <TextBox Name="TenantIdBox" />
+
+                <TextBlock Name="ClientIdLabel" Text="Client (App) ID" Classes="field-label" />
+                <TextBox Name="ClientIdBox" />
+
+                <TextBlock Name="SecretNoticeText" Foreground="#6B6F76" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,10"
+                           Text="The client secret isn't saved with this connection — you'll be asked for it each time you click Connect." />
+
+                <TextBlock Text="Default storage account name (optional — can also be typed on the Blob Storage tab)" Classes="field-label" />
+                <TextBox Name="StorageAccountBox" />
+
+                <TextBlock Text="Default Service Bus namespace (optional — can also be typed on the Service Bus tab), e.g. my-namespace" Classes="field-label" />
+                <TextBox Name="ServiceBusNamespaceBox" />
+
+                <TextBlock Text="Default Key Vault name (optional — can also be typed on the Key Vault tab), e.g. my-vault" Classes="field-label" />
+                <TextBox Name="KeyVaultNameBox" />
+
+                <TextBlock Text="Default Log Analytics workspace ID (optional — can also be typed on the Log Analytics tab) — the workspace's GUID, not its name" Classes="field-label" />
+                <TextBox Name="LogAnalyticsWorkspaceIdBox" />
+
+                <TextBlock Name="ErrorText" Foreground="#C0392B" TextWrapping="Wrap" Margin="0,12,0,0" IsVisible="False" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Classes="secondary" Click="Cancel_Click" IsCancel="True" />
+            <Button Content="Save" Click="Save_Click" Margin="0" />
+        </StackPanel>
+    </Grid>
+</Window>

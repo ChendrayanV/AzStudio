@@ -1,7 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <!--
+      Deliberately plain net8.0, not net8.0-windows: nothing in this project uses a
+      Windows-only API (verified — no System.Windows/System.Drawing/DllImport anywhere
+      here), and a -windows TFM would make this project un-referenceable from a
+      cross-platform consumer (e.g. AzStudio.Avalonia) even though there's no real
+      reason to restrict it. AzStudio.App (net8.0-windows) can still reference this
+      fine — a Windows-targeted app referencing a plain net8.0 library is always valid.
+    -->
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -9,9 +17,9 @@
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.2" />
+    <PackageReference Include="Azure.Monitor.Query" Version="1.7.1" />
     <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.1" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.29.2" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

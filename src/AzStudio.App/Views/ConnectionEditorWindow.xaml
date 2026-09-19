@@ -30,12 +30,8 @@
                 <TextBlock x:Name="ClientIdLabel" Text="Client (App) ID" Style="{StaticResource FieldLabel}" />
                 <TextBox x:Name="ClientIdBox" />
 
-                <StackPanel x:Name="SecretPanel">
-                    <TextBlock Text="Client secret" Style="{StaticResource FieldLabel}" />
-                    <PasswordBox x:Name="ClientSecretBox" />
-                    <TextBlock x:Name="SecretHintText" Foreground="#6B6F76" FontSize="11" Margin="0,3,0,0"
-                               Text="Leave blank to keep the existing saved secret." Visibility="Collapsed" />
-                </StackPanel>
+                <TextBlock x:Name="SecretNoticeText" Foreground="#6B6F76" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,10"
+                           Text="The client secret isn't saved with this connection — you'll be asked for it each time you click Connect." />
 
                 <TextBlock Text="Default storage account name (optional — can also be typed on the Blob Storage tab)" Style="{StaticResource FieldLabel}" />
                 <TextBox x:Name="StorageAccountBox" />
@@ -45,6 +41,9 @@
 
                 <TextBlock Text="Default Key Vault name (optional — can also be typed on the Key Vault tab), e.g. my-vault" Style="{StaticResource FieldLabel}" />
                 <TextBox x:Name="KeyVaultNameBox" />
+
+                <TextBlock Text="Default Log Analytics workspace ID (optional — can also be typed on the Log Analytics tab) — the workspace's GUID, not its name" Style="{StaticResource FieldLabel}" />
+                <TextBox x:Name="LogAnalyticsWorkspaceIdBox" />
 
                 <TextBlock x:Name="ErrorText" Foreground="#C0392B" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
             </StackPanel>

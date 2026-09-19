@@ -75,6 +75,21 @@
                 <Setter Property="BorderThickness" Value="1" />
             </Style>
 
+            <!-- Log Analytics query results: schema (columns) differs per query, so this is the
+                 one grid in the app that auto-generates its columns instead of using a fixed GridView. -->
+            <Style TargetType="DataGrid">
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="AutoGenerateColumns" Value="True" />
+                <Setter Property="CanUserAddRows" Value="False" />
+                <Setter Property="CanUserDeleteRows" Value="False" />
+                <Setter Property="IsReadOnly" Value="True" />
+                <Setter Property="GridLinesVisibility" Value="Horizontal" />
+                <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderBrush2}" />
+                <Setter Property="HeadersVisibility" Value="Column" />
+                <Setter Property="RowHeaderWidth" Value="0" />
+            </Style>
+
             <Style x:Key="SectionHeader" TargetType="TextBlock">
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="FontSize" Value="13" />
