@@ -1,0 +1,31 @@
+<Project>
+
+  <PropertyGroup>
+    <!--
+      Single source of truth for the version every project in the solution builds with,
+      so AzStudio.exe's own embedded FileVersion/ProductVersion is always a deliberate,
+      traceable value instead of the SDK's silent "1.0.0.0" default.
+
+      CI and the release pipeline both override this per-build (`-p:Version=...`, see
+      azure-pipelines.yml / azure-pipelines-release.yml) so a shipped exe's "File version"
+      always matches the package/tag it was published as. Local/dev builds that don't pass
+      -p:Version fall back to this baseline.
+    -->
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Quality gate: fail the build (not just warn) if any referenced package — direct or
+      transitive — has a known security advisory, at any severity from Low upward. This is
+      NuGet's built-in audit (no extra tool/service needed), which normally only warns;
+      elevating NU1901-1904 (its four severity levels) to errors is what makes it a real gate
+      instead of a warning nobody reads. Runs on every restore, so it protects local builds
+      too, not just CI.
+    -->
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+    <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

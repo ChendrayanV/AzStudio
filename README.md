@@ -1,6 +1,6 @@
 # AzStudio
 
-A Windows desktop GUI for connecting to Azure services from a Windows Server (or any Windows machine), currently supporting **Blob Storage**, **Service Bus**, and **Key Vault**.
+A desktop GUI for connecting to Azure services, currently supporting **Blob Storage**, **Service Bus**, **Key Vault**, and **Log Analytics**. Ships as two apps: a Windows-only WPF build, and a cross-platform Avalonia build that also runs on Linux and macOS.
 
 ![AzStudio screenshot](docs/screenshot.png)
 
@@ -26,15 +26,18 @@ In practice: someone can be handed a role that lets them read blobs in one speci
 - **Azure Blob Storage** — browse containers/blobs, upload, download, delete.
 - **Azure Service Bus (Queues and Topics)** — connect directly to a named queue, or a named topic + subscription, then peek messages (non-destructive) or send a test message. Check **View dead-letter messages** to peek a queue's or subscription's dead-letter sub-queue instead of its main queue. Double-click any message row to see its full details — content type, correlation/session/partition IDs, delivery count, TTL/expiry, application properties, and the untruncated body.
 - **Azure Key Vault** — list secrets and, per secret, every version with its status (enabled/disabled), activation date, and expiration date. Select a version and click **View Value...** to reveal it — masked by default with an explicit **Show**/**Hide** toggle and a **Copy to Clipboard** button, since a secret's value is materially more sensitive than its metadata.
+- **Azure Log Analytics** — run a KQL query against a workspace over a chosen time range (presets from Last 30 minutes to Last 30 days, or a custom date range) and browse the results in a grid. A workspace is addressed by its **Workspace ID** (a GUID, from its Overview page in the portal) rather than a friendly name — Log Analytics' query API has no name-based endpoint. Results columns are whatever the query returns, so the grid's columns aren't fixed like the other panels'.
 
 Two authentication modes are supported per saved connection:
 
-- **Service Principal** — Tenant ID, Client (App) ID, Client secret.
-- **Sign in as user (Azure AD)** — interactive browser sign-in (MSAL via `Azure.Identity`), with the signed-in token cached to disk so you aren't prompted every launch. The connection editor only asks for a Tenant ID in this mode — Client ID is a Service-Principal-only concept.
+- **Service Principal** — Tenant ID, Client (App) ID, Client secret. Only the Tenant ID and Client ID are saved with the connection; the client secret is never persisted anywhere, so you're prompted for it the first time you **Connect** with this profile in a given run of the app.
+- **Sign in as user (Azure AD)** — interactive browser sign-in (MSAL via `Azure.Identity`). No token or account is cached to disk, so the first **Connect** for a profile in a given run always opens a fresh browser sign-in. The connection editor only asks for a Tenant ID in this mode — Client ID is a Service-Principal-only concept.
+
+Either way, restarting the app always starts clean — see "Why sign-in shouldn't ask twice" below for exactly how long a sign-in is remembered.
 
 ### Navigating: Connections vs. Azure Services
 
-The left pane has two blocks. **Connections** (top) is where you pick/manage the saved identity and click **Connect**/**Disconnect** — a small status dot next to the bottom status bar turns green once connected, red otherwise. **Azure Services** (below it, enabled once connected) is where you pick which service's panel shows on the right — **Storage**, **Service Bus**, or **Key Vault**, each with its own icon. Switching between them doesn't reconnect or lose state; each service panel keeps its own account/namespace/vault field and last-loaded data independently. Where a panel shows a list next to its detail view (Containers/Blobs, Secrets/Versions), drag the divider between them to resize.
+The left pane has two blocks. **Connections** (top) is where you pick/manage the saved identity and click **Connect**/**Disconnect** — a small status dot next to the bottom status bar turns green once connected, red otherwise. **Azure Services** (below it, enabled once connected) is where you pick which service's panel shows on the right — **Storage**, **Service Bus**, **Key Vault**, or **Log Analytics**, each with its own icon. Switching between them doesn't reconnect or lose state; each service panel keeps its own account/namespace/vault/workspace field and last-loaded data independently. Where a panel shows a list next to its detail view (Containers/Blobs, Secrets/Versions), drag the divider between them to resize.
 
 ### Connecting to a specific storage account / Service Bus namespace / key vault
 
@@ -42,7 +45,9 @@ A saved connection is just an identity (an auth mode + tenant, and optionally a 
 
 ### Why sign-in shouldn't ask twice
 
-For **Sign in as user (Azure AD)**, clicking **Connect** performs one lightweight sign-in up front (`InteractiveBrowserCredential.AuthenticateAsync()` — establishing the account, not requesting any specific Azure resource's token) and persists the resulting MSAL `AuthenticationRecord` to `%APPDATA%\AzStudio\auth-records\{connectionId}.json`. That record — not a secret, just account/tenant identifiers — is what lets every later request, for Storage, Service Bus, *or* Key Vault (they're separate token audiences), silently resume the same signed-in account instead of independently deciding it needs its own fresh interactive prompt. It's also reused on the next **Connect** for the same saved connection, including across app restarts, so in the normal case you sign in interactively once, ever, per connection.
+For **Sign in as user (Azure AD)**, clicking **Connect** performs one lightweight sign-in up front (`InteractiveBrowserCredential.AuthenticateAsync()` — establishing the account, not requesting any specific Azure resource's token). That anchors the account in the one `InteractiveBrowserCredential` instance used for the rest of that connected session, which is what lets every later request, for Storage, Service Bus, Key Vault, *or* Log Analytics (they're separate token audiences), silently resume the same signed-in account instead of independently deciding it needs its own fresh interactive prompt.
+
+`MainViewModel` then keeps that resulting credential (and, for Service Principal, the one built from the entered secret) in a plain in-memory dictionary keyed by connection ID — never written to disk — for as long as the app process stays alive. So within one run of the app: the *first* **Connect** for a given saved connection authenticates (browser sign-in, or client-secret prompt); every **Disconnect** → **Connect** after that for the *same* connection, and every switch between the Storage/Service Bus/Key Vault/Log Analytics tabs, reuses that cached credential with no re-authentication at all. Editing a connection's auth type/tenant/client ID, or restarting the app, always clears that cache, so the next Connect for it starts fresh. Nothing credential-shaped is ever written to disk at any point — only non-secret profile metadata (name, tenant/client ID, default resource names) lives in `profiles.json`.
 
 If Connect still prompts you twice, or a specific service still fails to authenticate, check first whether the error is actually about authentication — errors that look like a permissions problem are sometimes really something else, and the app's status message tries to say which:
 
@@ -58,15 +63,16 @@ Enter the namespace and a queue name (or a topic + subscription name), then Peek
 ```
 AzStudio.sln
 src/
-  AzStudio.Core/     Auth, profile storage, and Azure service wrappers (no UI dependency)
-  AzStudio.App/       WPF (.NET 8) desktop UI
+  AzStudio.Core/      Auth, profile storage, and Azure service wrappers (no UI dependency)
+  AzStudio.App/        WPF (.NET 8, Windows-only) desktop UI
+  AzStudio.Avalonia/   Avalonia (.NET 8, cross-platform) desktop UI — Windows, Linux, macOS
 ```
 
-`AzStudio.Core` is deliberately UI-agnostic so new Azure service modules can be added later without touching the WPF layer's plumbing:
+`AzStudio.Core` is deliberately UI-agnostic (plain `net8.0`, no Windows-only APIs) so both UI layers — and any future one — can share it without touching each other's plumbing:
 
 - `Auth/CredentialFactory.cs` builds a `TokenCredential` from a `ConnectionProfile` — every service should authenticate through this.
-- `Storage/BlobStorageService.cs`, `ServiceBus/ServiceBusService.cs`, and `KeyVault/KeyVaultService.cs` are thin wrappers around the Azure SDK clients. A new service (e.g. Cosmos DB) follows the same pattern: a `*Service` class in Core taking a `TokenCredential`, plus a `*TabViewModel` and a panel in `MainWindow.xaml`.
-- `Profiles/ProfileStore.cs` persists connections to `%APPDATA%\AzStudio\profiles.json`. Client secrets are encrypted at rest with Windows DPAPI (`Security/SecretProtector.cs`), scoped to the signed-in Windows user — a copied profile file cannot be decrypted on another machine or by another account.
+- `Storage/BlobStorageService.cs`, `ServiceBus/ServiceBusService.cs`, `KeyVault/KeyVaultService.cs`, and `LogAnalytics/LogAnalyticsService.cs` are thin wrappers around the Azure SDK clients. A new service (e.g. Cosmos DB) follows the same pattern: a `*Service` class in Core taking a `TokenCredential`, plus a `*TabViewModel` and a panel in each UI project.
+- `Profiles/ProfileStore.cs` persists connections to `%APPDATA%\AzStudio\profiles.json` (or the platform-equivalent app-data folder on Linux/macOS). No credential material is ever written there — only non-secret metadata (name, tenant/client ID, default target resource names). A Service Principal's client secret is asked for fresh on every Connect and only ever held in memory.
 
 ## Building
 
@@ -79,19 +85,36 @@ dotnet build AzStudio.sln
 ## Running from source
 
 ```powershell
+# WPF (Windows only)
 dotnet run --project src/AzStudio.App/AzStudio.App.csproj
+
+# Avalonia (Windows, Linux, macOS)
+dotnet run --project src/AzStudio.Avalonia/AzStudio.Avalonia.csproj
 ```
 
-## Publishing a standalone executable for a Windows Server
+## Publishing a standalone executable
 
-This produces a single `.exe` with the .NET runtime bundled in, so no separate runtime install is needed on the target server:
+Each command below produces a single self-contained file with the .NET runtime bundled in — no separate runtime install needed on the target machine. `AzStudio.Avalonia` is plain `net8.0`, so every RID below cross-publishes cleanly from a single machine regardless of host OS.
 
 ```powershell
+# WPF, Windows only
 dotnet publish src/AzStudio.App/AzStudio.App.csproj -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/app-win-x64
+
+# Avalonia, one command per target OS/architecture
+dotnet publish src/AzStudio.Avalonia/AzStudio.Avalonia.csproj -c Release -r win-x64 --self-contained true `
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/avalonia-win-x64
+dotnet publish src/AzStudio.Avalonia/AzStudio.Avalonia.csproj -c Release -r linux-x64 --self-contained true `
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/avalonia-linux-x64
+dotnet publish src/AzStudio.Avalonia/AzStudio.Avalonia.csproj -c Release -r osx-x64 --self-contained true `
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/avalonia-osx-x64
+dotnet publish src/AzStudio.Avalonia/AzStudio.Avalonia.csproj -c Release -r osx-arm64 --self-contained true `
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/avalonia-osx-arm64
 ```
 
-Copy `publish\AzStudio.exe` to the server and run it — no installer required.
+## Releases
+
+[.github/workflows/release.yml](.github/workflows/release.yml) builds all of the above and attaches them to a new [GitHub Release](../../releases) whenever a change under `src/` lands on `main` (or on demand via **Actions → Release → Run workflow**). Each release ships a Windows WPF build plus Avalonia builds for Windows, Linux, and macOS (Intel and Apple Silicon).
 
 ## Notes on authentication
 

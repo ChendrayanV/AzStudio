@@ -7,6 +7,7 @@
         xmlns:vm="clr-namespace:AzStudio.App.ViewModels"
         mc:Ignorable="d"
         Title="AzStudio" Height="700" Width="1150" MinHeight="500" MinWidth="850"
+        WindowState="Maximized"
         FontFamily="{StaticResource AppFontFamily}"
         Icon="Assets/Icons/app.ico">
     <Grid>
@@ -60,6 +61,12 @@
                         <StackPanel Orientation="Horizontal">
                             <Image Source="Assets/Icons/key-vault.png" Width="18" Height="18" Margin="0,0,8,0" />
                             <TextBlock Text="Key Vault" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="LogAnalyticsNavRadio" GroupName="ServiceNav" Style="{StaticResource NavItem}" Checked="LogAnalyticsNav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="Assets/Icons/log-analytics.png" Width="18" Height="18" Margin="0,0,8,0" />
+                            <TextBlock Text="Log Analytics" VerticalAlignment="Center" />
                         </StackPanel>
                     </RadioButton>
                 </StackPanel>
@@ -269,6 +276,53 @@
                     </Grid>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" VerticalAlignment="Center" />
+                        <Button Content="Copy error details" Style="{StaticResource SecondaryButton}" Command="{Binding CopyErrorDetailsCommand}"
+                                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}" Margin="10,0,0,0" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid DataContext="{Binding LogAnalytics}" Visibility="{Binding DataContext.IsLogAnalyticsSelected, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}" Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Workspace ID:" Style="{StaticResource InlineFieldLabel}" />
+                        <TextBox Text="{Binding WorkspaceId}" Width="280" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Time range:" Style="{StaticResource InlineFieldLabel}" />
+                        <ComboBox ItemsSource="{Binding TimeRangeOptions}" SelectedItem="{Binding SelectedTimeRange, Mode=TwoWay}"
+                                  Width="150" Margin="0,0,10,0" />
+                        <StackPanel Orientation="Horizontal" Visibility="{Binding IsCustomRangeSelected, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="From" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <DatePicker SelectedDate="{Binding CustomStart}" Width="120" Margin="0,0,10,0" />
+                            <TextBlock Text="To" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <DatePicker SelectedDate="{Binding CustomEnd}" Width="120" Margin="0,0,10,0" />
+                        </StackPanel>
+                        <Button Content="Run Query" Command="{Binding RunQueryCommand}" />
+                    </StackPanel>
+
+                    <DockPanel Grid.Row="2" Margin="0,0,0,12">
+                        <TextBlock DockPanel.Dock="Top" Text="KQL query" Style="{StaticResource SectionHeader}" />
+                        <TextBox Text="{Binding KqlQuery, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="80" AcceptsReturn="True" TextWrapping="NoWrap"
+                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas" />
+                    </DockPanel>
+
+                    <DockPanel Grid.Row="3">
+                        <TextBlock DockPanel.Dock="Top" Text="Results" Style="{StaticResource SectionHeader}" />
+                        <DataGrid ItemsSource="{Binding Results}" />
+                    </DockPanel>
+
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,8,0,0">
                         <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#3B3F45" FontSize="12" VerticalAlignment="Center" />
                         <Button Content="Copy error details" Style="{StaticResource SecondaryButton}" Command="{Binding CopyErrorDetailsCommand}"
                                 Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}" Margin="10,0,0,0" />

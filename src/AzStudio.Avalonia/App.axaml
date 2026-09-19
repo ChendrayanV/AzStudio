@@ -1,0 +1,228 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AzStudio.Avalonia.App"
+             RequestedThemeVariant="Light">
+
+    <Application.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="#0078D4" />
+        <SolidColorBrush x:Key="AccentDarkBrush" Color="#005A9E" />
+        <SolidColorBrush x:Key="BorderBrush2" Color="#D0D5DA" />
+        <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#F3F3F3" />
+        <SolidColorBrush x:Key="NavHoverBrush" Color="#E4E6E9" />
+        <SolidColorBrush x:Key="ConnectedBrush" Color="#2E7D32" />
+        <SolidColorBrush x:Key="DisconnectedBrush" Color="#C0392B" />
+        <FontFamily x:Key="AppFontFamily">avares://AzStudio.Avalonia/Assets/Fonts/Montserrat-VariableFont_wght.ttf#Montserrat</FontFamily>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+        <!-- Explicit default text color for every TextBlock in the app, rather than relying on
+             FluentTheme's own light/dark-variant default foreground resource. RequestedThemeVariant
+             on <Application> above should already force light everywhere, but text visibility is
+             exactly the kind of thing not worth leaving to theme-resource resolution across
+             different OSes/system theme settings — this makes it unconditional.
+
+             FontWeight="SemiBold" is here for a different, confirmed reason: AppFontFamily points
+             at a variable font (Montserrat-VariableFont_wght.ttf, one file spanning Thin..Black).
+             Verified by direct pixel sampling (not just visual impression): at "Normal"/"Medium"
+             (400/500) Avalonia's Skia text rendering produces such thin glyph strokes for this
+             font that most pixels in a run of text are only partially ink-covered and blend
+             toward the background — for dark text on a light background this reads as faded/
+             low-contrast even though Foreground and Opacity are both correct and unchanged;
+             white text on a saturated button background hid the same thinness, which is why
+             buttons looked fine while plain labels didn't. "SemiBold" (600) is the lightest
+             weight confirmed to render with solid, fully-covered strokes for this font file. -->
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#1A1D21" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBox, Button, ComboBox, DataGrid, RadioButton, CheckBox">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style Selector="Button">
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource AccentDarkBrush}" />
+        </Style>
+        <Style Selector="Button:disabled /template/ ContentPresenter">
+            <Setter Property="Background" Value="#B9BEC3" />
+        </Style>
+
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="#6B6F76" />
+        </Style>
+
+        <!-- Overrides the blanket TextBlock foreground above for a Button's own text.
+             Crucially this uses /template/ — a Button's displayed text (Content="New" as a
+             plain string) is auto-generated INSIDE FluentTheme's own Button control template,
+             not in the logical tree MainWindow.axaml authors. A plain descendant selector
+             ("Button TextBlock", no /template/) does not cross that template boundary in
+             Avalonia, so it silently never matched anything — this was a real, do-nothing bug,
+             not a false lead. /template/ ContentPresenter is the same pattern already used
+             correctly below for Background. -->
+        <Style Selector="Button /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="Padding" Value="4" />
+        </Style>
+
+        <Style Selector="ListBox">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="DataGrid">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CanUserResizeColumns" Value="True" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderBrush2}" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="IsReadOnly" Value="True" />
+        </Style>
+
+        <Style Selector="TextBlock.section-header">
+            <Setter Property="Foreground" Value="#1A1D21" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style Selector="TextBlock.field-label">
+            <Setter Property="Margin" Value="0,8,0,2" />
+            <Setter Property="Foreground" Value="#3B3F45" />
+        </Style>
+
+        <!-- Label preceding an inline field (e.g. "Namespace:  [textbox]"). Fixed, right-aligned
+             width so every field on a panel starts at the same x-position regardless of label length. -->
+        <Style Selector="TextBlock.inline-field-label">
+            <Setter Property="Foreground" Value="#1A1D21" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="MinWidth" Value="112" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+
+        <!-- Left-hand "Azure Services" navigation entry (Storage / Service Bus / etc). -->
+        <Style Selector="RadioButton.nav-item">
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+            <Setter Property="Foreground" Value="#1A1D21" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Bd" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <!-- Foreground must be forwarded explicitly: without this TemplateBinding, the
+                             hosted Content (the StackPanel+TextBlock authored in MainWindow.axaml) falls
+                             back to FluentTheme's own default RadioButton foreground resource instead of
+                             the Setter above, no matter how specific a descendant style selector targets
+                             the inner TextBlock directly — this was the actual cause of unchecked nav
+                             items rendering in a washed-out theme color despite matching style rules. -->
+                        <ContentPresenter Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <!-- Explicit default (unchecked) text color, same reasoning as inline-field-label/
+             section-header above: don't rely on inheritance through this element chain. The
+             :checked TextBlock rule further below is declared after this one, so it still
+             correctly wins and turns the selected item's text white. -->
+        <Style Selector="RadioButton.nav-item TextBlock">
+            <Setter Property="Foreground" Value="#1A1D21" />
+        </Style>
+        <Style Selector="RadioButton.nav-item:pointerover /template/ Border#Bd">
+            <Setter Property="Background" Value="{StaticResource NavHoverBrush}" />
+        </Style>
+        <Style Selector="RadioButton.nav-item:checked /template/ Border#Bd">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+        </Style>
+        <Style Selector="RadioButton.nav-item:checked">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <!-- Same override as Button TextBlock above, for the selected nav item's label. -->
+        <Style Selector="RadioButton.nav-item:checked TextBlock">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <!-- Small filled dot showing MainViewModel.IsConnected: red while disconnected, green once
+             connected. Driven by an "connected" style class toggled from the binding in MainWindow.axaml
+             (Avalonia's class-binding syntax), rather than WPF's DataTrigger. -->
+        <Style Selector="Ellipse.connection-dot">
+            <Setter Property="Fill" Value="{StaticResource DisconnectedBrush}" />
+        </Style>
+        <Style Selector="Ellipse.connection-dot.connected">
+            <Setter Property="Fill" Value="{StaticResource ConnectedBrush}" />
+        </Style>
+
+        <!-- Drag handle between two side-by-side list/detail panes. -->
+        <Style Selector="GridSplitter.panel-splitter">
+            <Setter Property="Width" Value="6" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="Background" Value="{StaticResource BorderBrush2}" />
+            <Setter Property="Cursor" Value="SizeWestEast" />
+        </Style>
+        <Style Selector="GridSplitter.panel-splitter:pointerover">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+        </Style>
+
+        <!--
+          Disabled state, declared last so it wins over every style above for the same
+          properties. Most of the app is legitimately IsEnabled=False until Connect (same
+          as the WPF app), but Avalonia/FluentTheme's default disabled treatment lowers
+          Opacity on the whole subtree — text that's already a muted gray becomes nearly
+          invisible instead of just "grayed out". These keep the same palette (the same
+          brushes/colors used everywhere else in the app) and only neutralize the extra
+          opacity falloff, so disabled controls read as muted but stay legible.
+        -->
+        <Style Selector=":is(Control):disabled">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="TextBlock:disabled">
+            <Setter Property="Foreground" Value="#6B6F76" />
+        </Style>
+        <!-- Same /template/ correction as above, for the disabled state. Disabled buttons get
+             a light-gray background (Button:disabled /template/ ContentPresenter above), so
+             their text needs to stay dark, not white. -->
+        <Style Selector="Button:disabled /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="#3B3F45" />
+        </Style>
+        <Style Selector="RadioButton.nav-item:disabled TextBlock">
+            <Setter Property="Foreground" Value="#6B6F76" />
+        </Style>
+        <!-- The selected nav item can be checked AND disabled at once (nav is disabled until
+             Connect, but one item still shows as selected) — its Border#Bd background stays
+             the solid accent blue regardless of enabled state, so its text must stay white,
+             not fall through to the generic muted-gray disabled rule above. Declared last to
+             win over that rule for this specific combination. -->
+        <Style Selector="RadioButton.nav-item:checked:disabled TextBlock">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="TextBox:disabled">
+            <Setter Property="Foreground" Value="#6B6F76" />
+        </Style>
+    </Application.Styles>
+</Application>

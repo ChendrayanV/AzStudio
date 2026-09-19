@@ -23,12 +23,6 @@ public class ConnectionProfile
     /// </summary>
     public string ClientId { get; set; } = string.Empty;
 
-    /// <summary>
-    /// DPAPI-protected, base64-encoded client secret. Only used for ServicePrincipal.
-    /// Never store the plain-text secret on disk.
-    /// </summary>
-    public string ProtectedClientSecret { get; set; } = string.Empty;
-
     /// <summary>Default storage account name for the Blob Storage module, e.g. "mystorageacct".</summary>
     public string StorageAccountName { get; set; } = string.Empty;
 
@@ -37,4 +31,11 @@ public class ConnectionProfile
 
     /// <summary>Default key vault name for the Key Vault module, e.g. "my-vault" (no suffix).</summary>
     public string KeyVaultName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Default Log Analytics workspace ID for the Log Analytics module — the workspace's
+    /// GUID (from its Overview page in the portal), not its friendly name; the query API
+    /// has no name-based endpoint.
+    /// </summary>
+    public string LogAnalyticsWorkspaceId { get; set; } = string.Empty;
 }

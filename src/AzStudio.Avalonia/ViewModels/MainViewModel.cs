@@ -1,26 +1,22 @@
 using System.Collections.ObjectModel;
-using System.Windows;
+using Avalonia.Controls;
 using Azure.Core;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using AzStudio.App.Views;
 using AzStudio.Core.Auth;
 using AzStudio.Core.Models;
 using AzStudio.Core.Profiles;
+using AzStudio.Avalonia.Views;
 
-namespace AzStudio.App.ViewModels;
+namespace AzStudio.Avalonia.ViewModels;
 
+/// <summary>
+/// Port of AzStudio.App's MainViewModel — all four service modules wired, same as the
+/// WPF version.
+/// </summary>
 public partial class MainViewModel : ObservableObject
 {
     private readonly ProfileStore _profileStore = new();
-
-    /// <summary>
-    /// Credentials already established this app run, keyed by connection ID. Never written to
-    /// disk — it's a plain in-memory dictionary that lives exactly as long as MainViewModel
-    /// does (i.e. the whole app process) and is gone the moment the app exits. This is what
-    /// lets Disconnect -> Connect again on the same profile, and switching between the
-    /// Storage/Service Bus/Key Vault tabs, skip re-authenticating for the rest of the run.
-    /// </summary>
     private readonly Dictionary<string, TokenCredential> _credentialCache = new();
 
     public ObservableCollection<ConnectionProfile> Connections { get; } = new();
@@ -55,7 +51,6 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string? connectedConnectionName;
 
-    /// <summary>Which Azure Services nav entry is selected in the left pane; drives which service panel shows on the right.</summary>
     [ObservableProperty]
     private bool isStorageSelected = true;
 
@@ -87,10 +82,6 @@ public partial class MainViewModel : ObservableObject
         {
             var index = Connections.IndexOf(existing);
             Connections[index] = profile;
-
-            // Auth details may have just changed (tenant, client ID, auth type) — drop any
-            // cached credential so the next Connect re-authenticates against the new values
-            // instead of reusing one that no longer matches this profile.
             _credentialCache.Remove(profile.Id);
         }
 
@@ -108,22 +99,20 @@ public partial class MainViewModel : ObservableObject
 
     private bool CanConnect() => SelectedConnection is not null && !IsConnecting;
 
+    public Window? OwnerWindow { get; set; }
+
     [RelayCommand(CanExecute = nameof(CanConnect))]
     private async Task ConnectAsync()
     {
         if (SelectedConnection is null) return;
         var profile = SelectedConnection;
 
-        // Already authenticated this profile earlier in the current app run? Reuse that
-        // credential — no secret prompt, no browser sign-in — instead of doing it again.
         var hasCachedCredential = _credentialCache.TryGetValue(profile.Id, out var cachedCredential);
 
-        // The client secret is never saved with the profile, so on a cache miss it has to be
-        // asked for fresh — but only once per profile per app run, not on every Connect.
         string? servicePrincipalSecret = null;
         if (!hasCachedCredential && profile.AuthType == AuthType.ServicePrincipal)
         {
-            servicePrincipalSecret = ClientSecretPromptWindow.Prompt(Application.Current.MainWindow, profile.Name);
+            servicePrincipalSecret = await ClientSecretPromptWindow.PromptAsync(OwnerWindow, profile.Name);
             if (string.IsNullOrEmpty(servicePrincipalSecret))
             {
                 StatusMessage = "Connection cancelled: client secret is required.";
@@ -144,9 +133,6 @@ public partial class MainViewModel : ObservableObject
                 : await CredentialFactory.CreateAsync(profile, servicePrincipalSecret);
             _credentialCache[profile.Id] = credential;
 
-            // Both tabs are activated with the shared credential regardless of whether a
-            // default account/namespace was saved on this connection — the account/namespace
-            // name can always be typed (or changed) directly on each tab.
             BlobStorage.Activate(credential, profile.StorageAccountName);
             ServiceBus.Activate(credential, profile.ServiceBusNamespace);
             KeyVault.Activate(credential, profile.KeyVaultName);

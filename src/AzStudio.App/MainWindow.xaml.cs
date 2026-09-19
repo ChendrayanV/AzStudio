@@ -75,6 +75,7 @@ public partial class MainWindow : Window
         vm.IsStorageSelected = true;
         vm.IsServiceBusSelected = false;
         vm.IsKeyVaultSelected = false;
+        vm.IsLogAnalyticsSelected = false;
     }
 
     private void ServiceBusNav_Checked(object sender, RoutedEventArgs e)
@@ -83,6 +84,7 @@ public partial class MainWindow : Window
         vm.IsServiceBusSelected = true;
         vm.IsStorageSelected = false;
         vm.IsKeyVaultSelected = false;
+        vm.IsLogAnalyticsSelected = false;
     }
 
     private void KeyVaultNav_Checked(object sender, RoutedEventArgs e)
@@ -91,5 +93,15 @@ public partial class MainWindow : Window
         vm.IsKeyVaultSelected = true;
         vm.IsStorageSelected = false;
         vm.IsServiceBusSelected = false;
+        vm.IsLogAnalyticsSelected = false;
+    }
+
+    private void LogAnalyticsNav_Checked(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        vm.IsLogAnalyticsSelected = true;
+        vm.IsStorageSelected = false;
+        vm.IsServiceBusSelected = false;
+        vm.IsKeyVaultSelected = false;
     }
 }

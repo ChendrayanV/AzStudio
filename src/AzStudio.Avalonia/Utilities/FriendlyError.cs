@@ -2,7 +2,7 @@ using System.Net.Sockets;
 using System.Text;
 using Azure;
 
-namespace AzStudio.App.Utilities;
+namespace AzStudio.Avalonia.Utilities;
 
 /// <summary>
 /// Turns exceptions from Azure SDK calls into short, human-readable status messages,
